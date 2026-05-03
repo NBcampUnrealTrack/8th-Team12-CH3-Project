@@ -3,6 +3,7 @@ Build/
 DerivedDataCache/
 Intermediate/
 Saved/
+Resource/
 
 *.sln
 *.suo
