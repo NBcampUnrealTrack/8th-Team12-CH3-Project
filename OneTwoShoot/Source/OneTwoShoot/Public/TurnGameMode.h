@@ -13,7 +13,7 @@ enum class EReloadSpeed : uint8
 	VeryFast	UMETA(DisplayName = "매우 빠름")
 };
 
-UENUM(BlueprintYpe)
+UENUM(BlueprinType)
 enum class ETurnState : uint8
 {
 	Wait		UMETA(DisplayName = "대기 및 처리 중"),
