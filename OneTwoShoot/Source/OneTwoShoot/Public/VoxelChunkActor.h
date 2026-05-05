@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
+#include "VoxelDefinitions.h"
 
 #include "VoxelChunkActor.generated.h"
 
@@ -55,7 +56,7 @@ protected:
 	UMaterialInterface* VoxelMaterial;
 
 	UPROPERTY()
-	TArray<bool> Voxels;
+	TArray<EVoxelBlockType> Voxels;
 
 
 	void InitializeVoxels();
@@ -70,18 +71,10 @@ protected:
 
 private:
 	
-	TArray<FVector> Vertices;
-	TArray<int32> Triangles;
-	TArray<FVector> Normals;
-	TArray<FVector2D> UVs;
-	TArray<FLinearColor> VertexColors;
-	TArray<FProcMeshTangent> Tangents;
+	FChunkMeshData MeshData;
 	void AddCube(int32 X, int32 Y, int32 Z);
-	void AddFace(
-		const FVector& V0,
-		const FVector& V1,
-		const FVector& V2,
-		const FVector& V3,
-		const FVector& Normal
-	);
+	void AddFace(EVoxelDirection Direction, const FVector& Base);
+	FIntVector GetDirectionOffset(EVoxelDirection Direction) const;
+	FVector GetDirectionNormal(EVoxelDirection Direction) const;
+	TArray<FVector> GetFaceVertices(EVoxelDirection Direction, const FVector& Base) const;
 };
