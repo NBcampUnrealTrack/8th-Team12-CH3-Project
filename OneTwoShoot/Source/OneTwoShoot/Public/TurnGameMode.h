@@ -2,32 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "TankGameTypes.h"
 #include "TurnGameMode.generated.h"
-
-UENUM(BlueprintType)
-enum class EReloadSpeed : uint8
-{
-	Slow		UMETA(DisplayName = "느림"),
-	Normal		UMETA(DisplayName = "보통"),
-	Fast		UMETA(DisplayName = "빠름"),
-	VeryFast	UMETA(DisplayName = "매우 빠름")
-};
-
-UENUM(BlueprintType)
-enum class ETurnState : uint8
-{
-	Wait		UMETA(DisplayName = "대기 및 처리 중"),
-	PlayerTurn	UMETA(DisplayName = "플레이어 차례"),
-	EnemyTurn	UMETA(DisplayName = "적 차례")
-};
-
-UENUM(BlueprintType)
-enum class EUnitType : uint8
-{
-	None,
-	Player,
-	Enemy
-};
 
 UCLASS()
 class ONETWOSHOOT_API ATurnGameMode : public AGameMode
