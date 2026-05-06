@@ -25,13 +25,25 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
 	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
 
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		AController* EventInstigator,
+		AActor* DamageCauser
+	) override;
+
+
+
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
 	void DebugDestroyCenter();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Debug")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Debug") // Obsolete
 	float DebugDestroyRadius = 200.f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Debug")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Debug") // Obsolete
 	FVector DebugDestroyLocalOffset = FVector::ZeroVector;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel") // 테스트용 함수
+		FVector GetRandomWorldLocationInsideChunk() const;
 
 
 protected:

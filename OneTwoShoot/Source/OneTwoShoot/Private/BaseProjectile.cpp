@@ -1,6 +1,6 @@
 ﻿#include "BaseProjectile.h"
-
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -11,6 +11,7 @@ ABaseProjectile::ABaseProjectile()
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	CollisionComponent->SetSphereRadius(15.0f);
 	CollisionComponent->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
+	CollisionComponent->BodyInstance.bUseCCD = true;
 	CollisionComponent->OnComponentHit.AddDynamic(this, &ABaseProjectile::OnHit);
 	RootComponent = CollisionComponent;
 	
@@ -21,6 +22,7 @@ ABaseProjectile::ABaseProjectile()
 	ProjectileMovement->UpdatedComponent = CollisionComponent;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
+	ProjectileMovement->bSweepCollision = true;
 	
 	ConstantWindAcceleration = FVector::ZeroVector;
 
@@ -67,21 +69,29 @@ void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 
 	float FinalRadius = BaseExplosionRadius + (ProjectileDamage * RadiusPerDamage);
 	
-	UGameplayStatics::ApplyRadialDamageWithFalloff(
-		this, 
-		ProjectileDamage, 
-		10.0f,
-		Hit.ImpactPoint,
-		FinalRadius,
-		FinalRadius,
-		1.0f, 
-		nullptr,
-		TArray<AActor*>(),
-		this,
-		GetInstigatorController()
-		);
-	
-	// OnExplosionHit.Broadcast(Hit.ImpactPoint, FinalRadius);
+		UGameplayStatics::ApplyRadialDamageWithFalloff(
+			this, 
+			ProjectileDamage, 
+			10.0f,
+			Hit.ImpactPoint,
+			FinalRadius,
+			FinalRadius,
+			1.0f, 
+			nullptr,
+			TArray<AActor*>(),
+			this,
+			GetInstigatorController(),
+			ECC_MAX
+			);
+		
+		if (OnExplosionHit.IsBound())
+		{
+			OnExplosionHit.Broadcast(
+				Hit.ImpactPoint,
+				FinalRadius
+			);
+		}
+	}
 	
 	Destroy();
 }

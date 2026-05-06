@@ -6,8 +6,12 @@
 
 class USphereComponent;
 class UProjectileMovementComponent;
+class UStaticMeshComponent;
 
-// DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnExplosionHit, FVector, HitLocation, float, ExplosionRadius);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
+	FOnExplosionHit, 
+	FVector, HitLocation, 
+	float, ExplosionRadius);
 
 UCLASS()
 class ONETWOSHOOT_API ABaseProjectile : public AActor
@@ -30,8 +34,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float BaseExplosionRadius = 100.0f;
 	
-	// UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-	// FOnExplosionHit OnExplosionHit;
+	UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+	FOnExplosionHit OnExplosionHit;
 
 protected:
 	virtual void BeginPlay() override;
@@ -47,7 +51,6 @@ protected:
 	
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 	
 private:
 	FVector ConstantWindAcceleration;
