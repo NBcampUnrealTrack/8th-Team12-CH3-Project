@@ -133,6 +133,16 @@ void AVoxelChunkActor::RebuildChunk()
 	GenerateMesh();
 }
 
+FVector AVoxelChunkActor::GetRandomWorldLocationInsideChunk() const
+{
+	const FVector RandomLocalLocation = FVector(
+		FMath::FRandRange(0.f, ChunkSizeX * VoxelSize),
+		FMath::FRandRange(0.f, ChunkSizeY * VoxelSize),
+		FMath::FRandRange(0.f, ChunkSizeZ * VoxelSize)
+	);
+
+	return GetActorTransform().TransformPosition(RandomLocalLocation);
+}
 void AVoxelChunkActor::AddCube(int32 X, int32 Y, int32 Z)
 {
 	const FVector Base = FVector(X, Y, Z) * VoxelSize;
