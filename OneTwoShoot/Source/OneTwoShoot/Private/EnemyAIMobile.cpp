@@ -69,17 +69,23 @@ void AEnemyAIMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFollowing
 
     bIsMoving = false;
 
-    // 이동 성공 여부 확인 후 행동 결정
-    if (Result.IsSuccess())
-    {
-        DecideAction();
-    }
-
-    // 델리게이트 해제 (중복 바인딩 방지)
+    // 델리게이트 해제
     AAIController* AIC = Cast<AAIController>(GetController());
     if (AIC)
     {
         AIC->GetPathFollowingComponent()->OnRequestFinished.RemoveAll(this);
+    }
+
+    if (Result.IsSuccess())
+    {
+        // 이동 성공 시 다음 행동 결정 (재이동 혹은 공격)
+        DecideAction();
+    }
+    else
+    {
+        // 이동 실패 시(예: 경로 막힘) 억지로라도 턴을 종료해야 게임이 멈추지 않음
+        UE_LOG(LogTemp, Error, TEXT("[%s] 이동 실패로 인해 강제로 턴을 종료합니다."), *GetName());
+        OnTurnEnd();
     }
 }
 

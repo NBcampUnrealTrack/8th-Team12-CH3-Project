@@ -1,4 +1,4 @@
-#include "BaseProjectile.h"
+﻿#include "BaseProjectile.h"
 
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -23,11 +23,19 @@ ABaseProjectile::ABaseProjectile()
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
 	
 	ConstantWindAcceleration = FVector::ZeroVector;
+
+	UE_LOG(LogTemp, Warning, TEXT("포탄 생성 완료!"));
 }
 
 void ABaseProjectile::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 발사 주체(Owner)가 설정되어 있다면, 그 액터와는 충돌을 무시하도록 설정
+	if (GetOwner())
+	{
+		CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
+	}
 }
 
 void ABaseProjectile::Tick(float DeltaTime)
@@ -51,6 +59,12 @@ void ABaseProjectile::FireInDirection(const FVector& ShootDirection, float Shoot
 
 void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	// 1. 자기 자신과 부딪혔거나, 발사 주체(Owner)와 부딪혔다면 무시
+	if (OtherActor == nullptr || OtherActor == this || OtherActor == GetOwner())
+	{
+		return;
+	}
+
 	float FinalRadius = BaseExplosionRadius + (ProjectileDamage * RadiusPerDamage);
 	
 	UGameplayStatics::ApplyRadialDamageWithFalloff(

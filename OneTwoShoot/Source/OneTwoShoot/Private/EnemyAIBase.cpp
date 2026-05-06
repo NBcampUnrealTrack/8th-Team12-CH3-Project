@@ -1,6 +1,7 @@
 ﻿#include "EnemyAIBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TurnGameMode.h"
 
 AEnemyAIBase::AEnemyAIBase()
 {
@@ -12,6 +13,8 @@ AEnemyAIBase::AEnemyAIBase()
     AttackDamage = 10;
     MoveSpeed = 300.f;
     bIsDead = false;
+    MaxTurnActionCount = 3;
+    TurnActionCount = MaxTurnActionCount;
 
     // CharacterMovement 기본 설정
     if (GetCharacterMovement())
@@ -92,7 +95,30 @@ bool AEnemyAIBase::IsInAttackRange()
 {
     if (!TargetPlayer) return false;
 
-    float Distance = FVector::Dist(GetActorLocation(), TargetPlayer->GetActorLocation());
+    // 1. 2D 거리 계산 (Z축 무시)
+    float Distance = FVector::Dist2D(GetActorLocation(), TargetPlayer->GetActorLocation());
+
+    // 2. 2D 비주얼 디버깅 (바닥에 원 그리기)
+    FVector Center = GetActorLocation();
+    // 캐릭터의 발바닥 위치로 높이 조정 (필요 시)
+    //Center.Z -= 45.f; 
+
+    DrawDebugCircle(
+        GetWorld(),
+        Center,                // 중심점
+        AttackRange,           // 반지름
+        32,                    // 세그먼트 (원이 얼마나 부드러운지)
+        FColor::Green,         // 색상
+        false,                 // 지속성 여부
+        0.1f,                  // 수명
+        0,                     // 우선순위
+        2.0f,                  // 선 두께
+        FVector(0, 0, 1)       // 원의 축 (Z축 방향을 바라보게 하여 평면으로 생성)
+    );
+
+    UE_LOG(LogTemp, Warning, TEXT("[%s] 2D 거리 체크 - 실제 거리: %f, 사거리: %f"),
+        *GetName(), Distance, AttackRange);
+
     return Distance <= AttackRange;
 }
 
@@ -105,8 +131,17 @@ void AEnemyAIBase::OnTurnStart()
 
 void AEnemyAIBase::OnTurnEnd()
 {
+    TurnActionCount = MaxTurnActionCount;
     // 턴 종료 시 공통 처리
     // ex) 턴 매니저에 종료 알림
+    
+    // 3. 게임 모드에 자신의 행동이 끝났음을 알림 (다음 적 차례 진행)
+    ATurnGameMode* GameMode = Cast<ATurnGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+    if (GameMode)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 행동 종료 - 다음 적 차례 요청"), *GetName());
+        GameMode->ContinueEnemyGroupTurn();
+    }
 }
 
 // 외부에서 현재 체력 가져오기

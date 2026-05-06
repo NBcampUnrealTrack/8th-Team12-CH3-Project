@@ -16,7 +16,11 @@ public class OneTwoShoot : ModuleRules
 			"EnhancedInput",
             "ProceduralMeshComponent",
             "NavigationSystem",
-			"AIModule"}
+			"AIModule",
+			"UMG",
+            "Slate",
+            "SlateCore"
+        }
 	);
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

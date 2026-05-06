@@ -42,6 +42,14 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
     float AttackRange;
 
+    //턴당 행동력 최대치
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    int32 MaxTurnActionCount;
+
+    //현재 턴당 행동력
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
+    int32 TurnActionCount;
+
     // 순수 가상함수 - 하위 클래스에서 반드시 구현
     virtual void OnDamaged(int32 DamageAmount);
     virtual void OnDeath();
