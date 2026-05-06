@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "BaseTank.generated.h"
 #include "TankGameTypes.h" 
 #include "BaseTank.generated.h"
 

@@ -7,6 +7,7 @@
 #include "VoxelWorld.generated.h"
 
 class AVoxelChunkActor;
+class ABaseProjectile;
 
 UCLASS()
 class ONETWOSHOOT_API AVoxelWorld : public AActor
@@ -37,6 +38,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|World|Debug")
 	float DebugDestroyRadius = 200.f;
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
+	void HandleProjectileExplosion(FVector HitLocation, float ExplosionRadius);
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
+	void BindExistingProjectiles();
 
 protected:
 	// Called when the game starts or when spawned

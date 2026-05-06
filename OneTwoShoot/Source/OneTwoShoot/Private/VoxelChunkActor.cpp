@@ -1,4 +1,6 @@
 #include "VoxelChunkActor.h"
+#include "Engine/DamageEvents.h"
+
 
 AVoxelChunkActor::AVoxelChunkActor()
 {
@@ -7,6 +9,12 @@ AVoxelChunkActor::AVoxelChunkActor()
 	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>(TEXT("ProceduralMesh"));
 	RootComponent = Mesh;
 	Mesh->bUseAsyncCooking = true;
+
+	SetCanBeDamaged(true);
+
+	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
+	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
 }
 
 
@@ -304,6 +312,29 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 	GenerateMesh();
 
 	//BP_OnDebugDestroyed(WorldLocation, Radius);
+}
+
+float AVoxelChunkActor::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(
+		DamageAmount,
+		DamageEvent,
+		EventInstigator,
+		DamageCauser
+	);
+
+	if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID))
+	{
+		const FRadialDamageEvent& RadialDamageEvent =
+			static_cast<const FRadialDamageEvent&>(DamageEvent);
+
+		const FVector ExplosionOrigin = RadialDamageEvent.Origin;
+		const float ExplosionRadius = RadialDamageEvent.Params.OuterRadius;
+
+		DestroyVoxelsAtWorldLocation(ExplosionOrigin, ExplosionRadius);
+		UE_LOG(LogTemp,Warning,TEXT("VoxelChunk took radial damage. Damage=%.1f Origin=%s Radius=%.1f"),ActualDamage,*ExplosionOrigin.ToString(),ExplosionRadius);
+	}
+	return ActualDamage;
 }
 
 void AVoxelChunkActor::DebugDestroyCenter()

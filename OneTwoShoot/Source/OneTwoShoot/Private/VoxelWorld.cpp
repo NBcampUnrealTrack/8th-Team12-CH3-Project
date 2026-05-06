@@ -2,15 +2,46 @@
 
 
 #include "VoxelWorld.h"
-
 #include "Kismet/GameplayStatics.h"
 #include "VoxelChunkActor.h"
+#include "BaseProjectile.h"
+
 
 // Sets default values
 AVoxelWorld::AVoxelWorld()
 {
 	PrimaryActorTick.bCanEverTick = false;
+		BindExistingProjectiles();
 
+}
+
+void AVoxelWorld::HandleProjectileExplosion(FVector HitLocation, float ExplosionRadius)
+{
+	DestroyVoxelsAtWorldLocation(HitLocation, ExplosionRadius);
+}
+
+void AVoxelWorld::BindExistingProjectiles()
+{
+	TArray<AActor*> FoundProjectiles;
+	UGameplayStatics::GetAllActorsOfClass(
+		GetWorld(),
+		ABaseProjectile::StaticClass(),
+		FoundProjectiles
+	);
+
+	for (AActor* Actor : FoundProjectiles)
+	{
+		ABaseProjectile* Projectile = Cast<ABaseProjectile>(Actor);
+		if (!IsValid(Projectile))
+		{
+			continue;
+		}
+
+		Projectile->OnExplosionHit.AddDynamic(
+			this,
+			&AVoxelWorld::HandleProjectileExplosion
+		);
+	}
 }
 
 // Called when the game starts or when spawned
@@ -19,6 +50,7 @@ void AVoxelWorld::BeginPlay()
 	Super::BeginPlay();
 
 	RefreshChunkList();
+	BindExistingProjectiles();
 }
 
 void AVoxelWorld::RefreshChunkList()
