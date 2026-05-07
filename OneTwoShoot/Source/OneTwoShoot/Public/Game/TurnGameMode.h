@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-#include "TankGameTypes.h"
+#include "../Public/Game/TankGameTypes.h"
 #include "TurnGameMode.generated.h"
 
 UCLASS()
