@@ -1,6 +1,6 @@
-﻿#include "EnemyAIMobileA.h"
+﻿#include "../Public/Tank/BaseProjectile.h"
+#include "../Public/Tank/Enemy/EnemyAIMobileA.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "BaseProjectile.h"
 #include "Kismet/GameplayStatics.h"
 
 AEnemyAIMobileA::AEnemyAIMobileA()

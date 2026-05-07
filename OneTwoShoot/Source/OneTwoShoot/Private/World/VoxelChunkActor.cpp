@@ -1,5 +1,5 @@
-﻿#include "VoxelChunkActor.h"
-#include "VoxelWorld.h"
+﻿#include "../Public/World/VoxelChunkActor.h"
+#include "../Public/World/VoxelWorld.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 

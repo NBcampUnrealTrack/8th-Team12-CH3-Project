@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "BaseTank.h"
+#include "../Public/Tank/BaseTank.h"
 #include "PlayerTank.generated.h"
 
 UCLASS()

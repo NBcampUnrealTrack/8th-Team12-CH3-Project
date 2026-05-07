@@ -1,4 +1,4 @@
-﻿#include "EnemyAIStationary.h"
+﻿#include "../Public/Tank/Enemy/EnemyAIStationary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 AEnemyAIStationary::AEnemyAIStationary()

@@ -1,5 +1,5 @@
-﻿#include "EnemyAIMobileBossA.h"
-#include "BaseProjectile.h"
+﻿#include "../Public/Tank/BaseProjectile.h"
+#include "../Public/Tank/Enemy/EnemyAIMobileBossA.h"
 #include "Kismet/KismetMathLibrary.h"
 
 AEnemyAIMobileBossA::AEnemyAIMobileBossA()

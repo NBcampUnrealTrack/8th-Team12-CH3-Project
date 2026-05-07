@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "ProceduralMeshComponent.h"
 #include "VoxelDefinitions.h"
-
 #include "VoxelChunkActor.generated.h"
 
 

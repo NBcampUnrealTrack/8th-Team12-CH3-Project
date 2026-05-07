@@ -1,7 +1,7 @@
 ﻿#include "../Public/Game/TurnGameMode.h"
+#include "../Public/Tank/Enemy/EnemyAIBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "EnemyAIBase.h"
 
 ATurnGameMode::ATurnGameMode()
 {

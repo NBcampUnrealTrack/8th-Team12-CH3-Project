@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
-#include "VoxelPathfinder.h"
-#include "VoxelWorld.h"
+#include "../Public/World/VoxelPathfinder.h"
+#include "../Public/World/VoxelWorld.h"
 
 VoxelPathfinder::VoxelPathfinder()
 {

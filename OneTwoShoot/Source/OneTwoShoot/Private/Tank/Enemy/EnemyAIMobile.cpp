@@ -1,6 +1,6 @@
-﻿#include "EnemyAIMobile.h"
-#include "VoxelPathfinder.h"
-#include "VoxelWorld.h"
+﻿#include "../Public/Tank/Enemy/EnemyAIMobile.h"
+#include "../Public/World/VoxelPathfinder.h"
+#include "../Public/World/VoxelWorld.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 

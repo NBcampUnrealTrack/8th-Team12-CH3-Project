@@ -1,9 +1,9 @@
-﻿#include "EnemyAIBase.h"
-#include "VoxelWorld.h"
-#include "VoxelPathfinder.h"
+﻿#include "../Public/Tank/Enemy/EnemyAIBase.h"
+#include "../Public/World/VoxelWorld.h"
+#include "../Public/World/VoxelPathfinder.h"
+#include "../Public/Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "TurnGameMode.h"
 
 AEnemyAIBase::AEnemyAIBase()
 {

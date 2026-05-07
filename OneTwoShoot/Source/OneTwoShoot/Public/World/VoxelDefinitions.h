@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "ProceduralMeshComponent.h"
-
 #include "VoxelDefinitions.generated.h"
 
 UENUM(BlueprintType)
