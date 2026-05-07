@@ -1,5 +1,7 @@
 #include "VoxelChunkActor.h"
 #include "Engine/DamageEvents.h"
+#include "Kismet/GameplayStatics.h"
+#include "VoxelWorld.h"
 
 
 AVoxelChunkActor::AVoxelChunkActor()
@@ -16,6 +18,11 @@ AVoxelChunkActor::AVoxelChunkActor()
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
 	Mesh->SetCanEverAffectNavigation(true);
+}
+
+void AVoxelChunkActor::SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld)
+{
+	OwningVoxelWorld = InVoxelWorld;
 }
 
 
@@ -284,6 +291,7 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 	const int32 CenterZ = FMath::FloorToInt(LocalLocation.Z / VoxelSize);
 
 	const int32 RadiusInVoxels = FMath::CeilToInt(Radius / VoxelSize);
+	bool bAnyVoxelDestroyed = false;
 
 	for (int32 Z = CenterZ - RadiusInVoxels; Z <= CenterZ + RadiusInVoxels; Z++)
 	{
@@ -301,8 +309,12 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 
 				if (FVector::Dist(VoxelCenter, LocalLocation) <= Radius)
 				{
-					Voxels[GetVoxelIndex(X, Y, Z)] = EVoxelBlockType::Air;
-					
+					const int32 VoxelIndex = GetVoxelIndex(X, Y, Z);
+					if (Voxels[VoxelIndex] != EVoxelBlockType::Air)
+					{
+						Voxels[VoxelIndex] = EVoxelBlockType::Air;
+						bAnyVoxelDestroyed = true;
+					}
 				}
 			}
 		}
@@ -310,7 +322,10 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_GenerateMesh);
 
 	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("Generate Mesh Called."));
-	GenerateMesh();
+	if (bAnyVoxelDestroyed)
+	{
+		GenerateMesh();
+	}
 
 	//BP_OnDebugDestroyed(WorldLocation, Radius);
 }
@@ -332,8 +347,17 @@ float AVoxelChunkActor::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 		const FVector ExplosionOrigin = RadialDamageEvent.Origin;
 		const float ExplosionRadius = RadialDamageEvent.Params.OuterRadius;
 
-		DestroyVoxelsAtWorldLocation(ExplosionOrigin, ExplosionRadius);
-		UE_LOG(LogTemp,Warning,TEXT("VoxelChunk took radial damage. Damage=%.1f Origin=%s Radius=%.1f"),ActualDamage,*ExplosionOrigin.ToString(),ExplosionRadius);
+		if (!OwningVoxelWorld.IsValid())
+		{
+			OwningVoxelWorld = Cast<AVoxelWorld>(UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass()));
+		}
+
+		if (AVoxelWorld* VoxelWorld = OwningVoxelWorld.Get())
+		{
+			VoxelWorld->RequestVoxelExplosionFromChunk(this, ExplosionOrigin, ExplosionRadius, DamageCauser);
+		}
+
+		UE_LOG(LogTemp,Warning,TEXT("VoxelChunk reported radial damage. Damage=%.1f Origin=%s Radius=%.1f"),ActualDamage,*ExplosionOrigin.ToString(),ExplosionRadius);
 	}
 	return ActualDamage;
 }
@@ -371,4 +395,7 @@ void AVoxelChunkActor::DebugDestroyCenter()
 		DebugDestroyRadius
 	);
 }
+
+
+
 

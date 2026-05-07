@@ -36,6 +36,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
 	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
 
+	void RequestVoxelExplosionFromChunk(
+		AVoxelChunkActor* ReportingChunk,
+		FVector ExplosionOrigin,
+		float ExplosionRadius,
+		AActor* DamageCauser
+	);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|World|Debug")
 	float DebugDestroyRadius = 200.f;
 
@@ -52,4 +59,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Voxel|World")
 	TArray<TObjectPtr<AVoxelChunkActor>> Chunks;
 
+	UPROPERTY()
+	TWeakObjectPtr<AActor> LastExplosionDamageCauser;
+
+	float LastExplosionTime = -1.0f;
+	FVector LastExplosionOrigin = FVector::ZeroVector;
+	float LastExplosionRadius = 0.0f;
 };

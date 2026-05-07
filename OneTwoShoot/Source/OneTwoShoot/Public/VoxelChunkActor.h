@@ -12,6 +12,7 @@
 
 class UProceduralMeshComponent;
 class UMaterialInterface;
+class AVoxelWorld;
 
 UCLASS()
 class ONETWOSHOOT_API AVoxelChunkActor : public AActor
@@ -24,6 +25,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
 	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
+
+	void SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld);
 
 	virtual float TakeDamage(
 		float DamageAmount,
@@ -84,9 +87,15 @@ protected:
 private:
 	
 	FChunkMeshData MeshData;
+	
+	UPROPERTY()
+	TWeakObjectPtr<AVoxelWorld> OwningVoxelWorld;
+
 	void AddCube(int32 X, int32 Y, int32 Z);
 	void AddFace(EVoxelDirection Direction, const FVector& Base);
 	FIntVector GetDirectionOffset(EVoxelDirection Direction) const;
 	FVector GetDirectionNormal(EVoxelDirection Direction) const;
 	TArray<FVector> GetFaceVertices(EVoxelDirection Direction, const FVector& Base) const;
 };
+
+
