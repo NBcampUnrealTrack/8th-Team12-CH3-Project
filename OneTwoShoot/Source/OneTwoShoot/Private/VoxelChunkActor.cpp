@@ -15,6 +15,7 @@ AVoxelChunkActor::AVoxelChunkActor()
 	Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
+	Mesh->SetCanEverAffectNavigation(true);
 }
 
 
