@@ -1,4 +1,4 @@
-#include "VoxelChunkActor.h"
+Ôªø#include "VoxelChunkActor.h"
 #include "Engine/DamageEvents.h"
 
 
@@ -27,7 +27,7 @@ void AVoxelChunkActor::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("VoxelChunk Initialized: %d voxels"), Voxels.Num());
 	
-	//for (int32 Z = 0; Z < ChunkSizeZ; Z++) //-> ∞¢ Voxel∏∂¥Ÿ ∑Œ±◊¬Ô±‚
+	//for (int32 Z = 0; Z < ChunkSizeZ; Z++) //-> Í∞Å VoxelÎßàÎã§ Î°úÍ∑∏Ï∞çÍ∏∞
 	//{
 	//	for (int32 Y = 0; Y < ChunkSizeY; Y++)
 	//	{
@@ -211,7 +211,7 @@ void AVoxelChunkActor::AddFace(EVoxelDirection Direction, const FVector& Base)
 	MeshData.Tangents.Append({ Tangent, Tangent, Tangent, Tangent });
 }
 
-FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const //FIntVector «¸≈¬ πÊ«‚ ∫§≈Õ. 1*1*1 ±◊∏ÆµÂ ∞¸∏ÆøÎ.
+FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const //FIntVector ÌòïÌÉú Î∞©Ìñ• Î≤°ÌÑ∞. 1*1*1 Í∑∏Î¶¨Îìú Í¥ÄÎ¶¨Ïö©.
 {
 	switch (Direction)
 	{
@@ -228,12 +228,12 @@ FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const
 	case EVoxelDirection::Down:
 		return FIntVector(0, 0, -1);
 	}
-	// ¡∏¿Á«œ¥¬ ∏µÁ πÊ«‚ switch √≥∏Æ - ±‚«œπ˝ƒ¢¿Ã∂Û switch∑Œ µŒ¥¬ ∞‘ ∏¬¿ªµÌ?
-	checkNoEntry();//ƒ⁄µÂ∞° ø©±‚±Ó¡ˆ ≥ª∑¡ø¿∏È ≈Õ¡¸
-	return FIntVector::ZeroValue; // π∞∏Æ¿˚¿∏∑Œ ¡∏¿Á«œ¡ˆ æ ¥¬ πÊ«‚ µÈæÓø¿∏È 000 π›»Ø
+	// Ï°¥Ïû¨ÌïòÎäî Î™®Îì† Î∞©Ìñ• switch Ï≤òÎ¶¨ - Í∏∞ÌïòÎ≤ïÏπôÏù¥Îùº switchÎ°ú ÎëêÎäî Í≤å ÎßûÏùÑÎìØ?
+	checkNoEntry();//ÏΩîÎìúÍ∞Ä Ïó¨Í∏∞ÍπåÏßÄ ÎÇ¥Î†§Ïò§Î©¥ ÌÑ∞Ïßê
+	return FIntVector::ZeroValue; // Î¨ºÎ¶¨Ï†ÅÏúºÎ°ú Ï°¥Ïû¨ÌïòÏßÄ ÏïäÎäî Î∞©Ìñ• Îì§Ïñ¥Ïò§Î©¥ 000 Î∞òÌôò
 }
 
-FVector AVoxelChunkActor::GetDirectionNormal(EVoxelDirection Direction) const //FIntVector «¸≈¬¿Œ GetDirectionOffset∏¶ FVector∑Œ ∫Ø»Ø. Procedural Meshø°º≠ Normal/TangentøÎ
+FVector AVoxelChunkActor::GetDirectionNormal(EVoxelDirection Direction) const //FIntVector ÌòïÌÉúÏù∏ GetDirectionOffsetÎ•º FVectorÎ°ú Î≥ÄÌôò. Procedural MeshÏóêÏÑú Normal/TangentÏö©
 {
 	return FVector(GetDirectionOffset(Direction));
 }
@@ -370,5 +370,32 @@ void AVoxelChunkActor::DebugDestroyCenter()
 		*DebugDestroyLocalOffset.ToString(),
 		DebugDestroyRadius
 	);
+}
+
+bool AVoxelChunkActor::Contains(FIntVector GlobalCoords) const
+{
+	// Ï†ÑÏó≠ Ï¢åÌëúÍ∞Ä Ï≤≠ÌÅ¨Ïùò ÏãúÏûëÏ†ê(Offset)Í≥º ÎÅùÏ†ê(Offset + Size) ÏÇ¨Ïù¥Ïóê ÏûàÎäîÏßÄ ÌôïÏù∏
+	return (GlobalCoords.X >= ChunkVoxelOffset.X && GlobalCoords.X < ChunkVoxelOffset.X + ChunkSize) &&
+		(GlobalCoords.Y >= ChunkVoxelOffset.Y && GlobalCoords.Y < ChunkVoxelOffset.Y + ChunkSize) &&
+		(GlobalCoords.Z >= ChunkVoxelOffset.Z && GlobalCoords.Z < ChunkVoxelOffset.Z + ChunkSize);
+}
+
+EVoxelBlockType AVoxelChunkActor::GetVoxelType(FIntVector GlobalCoords) const
+{
+	// 1. Ï†ÑÏó≠ Ï¢åÌëúÎ•º Ï≤≠ÌÅ¨ ÏÉÅÎåÄ Ï¢åÌëú(Local)Î°ú Î≥ÄÌôò
+	int32 LocalX = GlobalCoords.X - ChunkVoxelOffset.X;
+	int32 LocalY = GlobalCoords.Y - ChunkVoxelOffset.Y;
+	int32 LocalZ = GlobalCoords.Z - ChunkVoxelOffset.Z;
+
+	// 2. 3Ï∞®Ïõê Ï¢åÌëúÎ•º 1Ï∞®Ïõê Î∞∞Ïó¥ Ïù∏Îç±Ïä§Î°ú Î≥ÄÌôò (XYZ ÏàúÏÑú ÌôïÏù∏ ÌïÑÏöî)
+	int32 Index = LocalX + (LocalY * ChunkSize) + (LocalZ * ChunkSize * ChunkSize);
+
+	// 3. Ïù∏Îç±Ïä§ Ïú†Ìö®ÏÑ± Í≤ÄÏÇ¨ ÌõÑ Îç∞Ïù¥ÌÑ∞ Î∞òÌôò
+	if (Voxels.IsValidIndex(Index))
+	{
+		return Voxels[Index];
+	}
+
+	return EVoxelBlockType::Air;
 }
 

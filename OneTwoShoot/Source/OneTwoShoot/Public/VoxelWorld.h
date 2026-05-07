@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -8,6 +8,7 @@
 
 class AVoxelChunkActor;
 class ABaseProjectile;
+enum class EVoxelBlockType : uint8;
 
 UCLASS()
 class ONETWOSHOOT_API AVoxelWorld : public AActor
@@ -44,6 +45,23 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
 	void BindExistingProjectiles();
+
+
+	//테스트용 추가 5종
+	UFUNCTION(BlueprintCallable, Category = "Voxel|AI")
+	bool IsWalkable(FIntVector GlobalCoords);
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|AI")
+	EVoxelBlockType GetVoxelTypeAt(FIntVector GlobalCoords);
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
+	FIntVector WorldToVoxelCoords(FVector WorldLocation) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
+	FVector VoxelToWorldLocation(FIntVector VoxelCoords) const;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel")
+	float VoxelSize = 100.0f;
 
 protected:
 	// Called when the game starts or when spawned

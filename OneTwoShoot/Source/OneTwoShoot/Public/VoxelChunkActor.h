@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -42,9 +42,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Debug") // Obsolete
 	FVector DebugDestroyLocalOffset = FVector::ZeroVector;
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel") // �׽�Ʈ�� �Լ�
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel") // 테스트용 함수
 		FVector GetRandomWorldLocationInsideChunk() const;
 
+	//테스트용 추가
+
+	// 이 청크가 전역 복쉘 좌표(GlobalCoords)를 포함하고 있는지 확인
+	bool Contains(FIntVector GlobalCoords) const;
+
+	// 전역 좌표를 받아 청크 내부의 복쉘 타입을 반환
+	EVoxelBlockType GetVoxelType(FIntVector GlobalCoords) const;
+
+	// 청크가 시작되는 전역 복쉘 좌표 (예: 0,0,0 또는 16,0,0 등)
+	UPROPERTY(EditAnywhere, Category = "Voxel")
+	FIntVector ChunkVoxelOffset;
+
+	// 청크의 한 변 길이 (보통 16, 32 등)
+	UPROPERTY(EditAnywhere, Category = "Voxel")
+	int32 ChunkSize = 16;
 
 protected:
 	// Called when the game starts or when spawned

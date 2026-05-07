@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿//전체 적 AI Base 클래스
+
+#pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "EnemyAIBase.generated.h"

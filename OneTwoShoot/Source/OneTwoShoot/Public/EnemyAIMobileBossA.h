@@ -15,15 +15,13 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    // 베이스 클래스의 패턴 실행 함수 오버라이드
     virtual void ExecutePattern() override;
 
 private:
-    // 보스 A만의 전투 관련 기능
+
     void Aim();
     void FireProjectile(FRotator SpawnRotation);
 
-    // 페이즈별 패턴
     void Pattern_SingleShot();
     void Pattern_SpreadShot(int32 ProjectileCount, float SpreadAngle);
 
