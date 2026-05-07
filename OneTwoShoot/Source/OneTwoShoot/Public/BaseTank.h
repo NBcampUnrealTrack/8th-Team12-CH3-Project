@@ -37,7 +37,7 @@ protected:
 	float CurrentHealth;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float TankBasePower = 100.0f;
+	float TankBasePower = 70.0f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aim")
 	float CurrentPitch = 45.0f;

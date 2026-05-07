@@ -23,3 +23,4 @@ Resource/
 # Visual Studio cache
 .vs/
 *.ipch
+*.user
