@@ -1,8 +1,8 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
+#include "../Public/World/VoxelWorld.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "../Public/World/VoxelChunkActor.h"
-#include "../Public/World/VoxelWorld.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
