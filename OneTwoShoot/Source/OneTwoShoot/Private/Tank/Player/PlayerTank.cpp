@@ -54,9 +54,10 @@ void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Move);
-		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Turn);
+		EnhancedInputComponent->BindAction(TurnAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Horizontal);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Look);
 		EnhancedInputComponent->BindAction(ToggleCameraAction, ETriggerEvent::Started, this, &APlayerTank::ToggleCameraView);
+		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Zoom);
 	}
 }
 
@@ -89,18 +90,28 @@ void APlayerTank::MoveTank(float Value)
 	}
 }
 
-/// ----- 드론을 움직이는 로직
-void APlayerTank::MoveDrone(float Value)
+/// ----- 드론 앞뒤 이동 처리
+void APlayerTank::MoveDroneForward(float Value)
 {
 	if (Value == 0.0f) return;
 
-	FVector Forward = Camera->GetForwardVector();
-	Forward.Z = 0.0f;
-	Forward.Normalize();
+	FVector WorldForward = FVector(1.0f, 0.0f, 0.0f);
 
-	DroneOffset += Forward * Value * DroneMoveSpeed * GetWorld()->GetDeltaSeconds();
+	DroneOffset += WorldForward * Value * DroneMoveSpeed * GetWorld()->GetDeltaSeconds();
 
-	SpringArm->SocketOffset = DroneOffset;
+	SpringArm->TargetOffset = DroneOffset;
+}
+
+/// ----- 드론 좌우 이동 처리
+void APlayerTank::MoveDroneRight(float Value)
+{
+	if (Value == 0.0f) return;
+
+	FVector WorldRight = FVector(0.0f, 1.0f, 0.0f);
+
+	DroneOffset += WorldRight * Value * DroneMoveSpeed * GetWorld()->GetDeltaSeconds();
+
+	SpringArm->TargetOffset = DroneOffset;
 }
 
 /// ----- 실제 이동 처리
@@ -109,7 +120,7 @@ void APlayerTank::Input_Move(const FInputActionValue& Value)
 	float MoveValue = Value.Get<float>();
 	if (bIsDroneView)
 	{
-		MoveDrone(MoveValue);
+		MoveDroneForward(MoveValue);
 	}
 	else
 	{
@@ -117,18 +128,29 @@ void APlayerTank::Input_Move(const FInputActionValue& Value)
 	}
 }
 
-/// ----- 실제 회전 처리
-void APlayerTank::Input_Turn(const FInputActionValue& Value)
+/// ----- 탱크 회전 로직
+void APlayerTank::RotateTank(float Value)
 {
-	float TurnValue = Value.Get<float>();
-
-	if (TurnValue != 0.0f)
-	{
-		float RotationSpeed = CalculateActiveRotationSpeed();
+	float RotationSpeed = CalculateActiveRotationSpeed();
         
-		/// ----- 입력값 * 초당 회전도 * 프레임 시간
-		float DeltaRotation = TurnValue * RotationSpeed * GetWorld()->GetDeltaSeconds();
-		AddActorLocalRotation(FRotator(0.0f, DeltaRotation, 0.0f));
+	/// ----- 입력값 * 초당 회전도 * 프레임 시간
+	float DeltaRotation = Value * RotationSpeed * GetWorld()->GetDeltaSeconds();
+	AddActorLocalRotation(FRotator(0.0f, DeltaRotation, 0.0f));
+}
+
+/// ----- 실제 회전 처리
+void APlayerTank::Input_Horizontal(const FInputActionValue& Value)
+{
+	float AxisValue = Value.Get<float>();
+	if (AxisValue == 0.0f) return;
+
+	if (bIsDroneView)
+	{
+		MoveDroneRight(AxisValue);
+	}
+	else
+	{
+		RotateTank(AxisValue);
 	}
 }
 
@@ -151,17 +173,35 @@ void APlayerTank::ToggleCameraView()
 
 	if (bIsDroneView)
 	{
-		SpringArm->TargetArmLength = 1500.0f; 
+		SpringArm->SetUsingAbsoluteRotation(true);
+        
+		SpringArm->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
+
+		SpringArm->TargetArmLength = 2000.0f; 
 		SpringArm->bUsePawnControlRotation = false; 
-		SpringArm->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
         
 		DroneOffset = FVector::ZeroVector;
-		SpringArm->SocketOffset = DroneOffset;
+		SpringArm->TargetOffset = DroneOffset;
 	}
 	else
 	{
+		SpringArm->SetUsingAbsoluteRotation(false);
+        
 		SpringArm->TargetArmLength = 500.0f;
 		SpringArm->bUsePawnControlRotation = true; 
-		SpringArm->SocketOffset = FVector::ZeroVector;
+		SpringArm->TargetOffset = FVector::ZeroVector;
+	}
+}
+
+/// ----- 캐릭터 시야 확대/축소 처리
+void APlayerTank::Input_Zoom(const FInputActionValue& Value)
+{
+	if (!bIsDroneView) return; 
+
+	float ZoomValue = Value.Get<float>();
+	if (ZoomValue != 0.0f)
+	{
+		float NewLength = SpringArm->TargetArmLength + (ZoomValue * ZoomSpeed * -1.0f);
+		SpringArm->TargetArmLength = FMath::Clamp(NewLength, MinZoomLength, MaxZoomLength);
 	}
 }
