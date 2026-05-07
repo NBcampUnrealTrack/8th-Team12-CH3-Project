@@ -3,6 +3,8 @@
 #include "../Public/World/VoxelWorld.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "../Public/World/VoxelChunkActor.h"
+#include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
 
 // Sets default values
@@ -195,57 +197,44 @@ void AVoxelWorld::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radi
 
 }
 
-// 전역 복쉘 좌표가 이동 가능한지 체크 (바닥, 벽 사이, 천장 세 가지 체크)
-bool AVoxelWorld::IsWalkable(FIntVector Coords)
+bool AVoxelWorld::IsVoxelOccupied(FIntVector Coords, AActor* IgnoreActor)
 {
-	// 1. 각 위치의 블록 상태 확인
-	EVoxelBlockType Ground = GetVoxelTypeAt(Coords + FIntVector(0, 0, -1)); // 발밑
-	EVoxelBlockType Body = GetVoxelTypeAt(Coords);                       // 몸통
-	EVoxelBlockType Head = GetVoxelTypeAt(Coords + FIntVector(0, 0, 1));  // 머리
+	FVector WorldPos = VoxelToWorldLocation(Coords);
+	WorldPos.Z += 50.0f;
 
-	// 2. [검사 1] 발밑에 땅이 있는가?
-	if (Ground == EVoxelBlockType::Air)
-	{
-		// 너무 자주 찍히면 시끄러우니 경로 탐색 시에만 확인하거나 필요할 때 켭니다.
-		UE_LOG(LogTemp, Error, TEXT("이동 불가 [%s]: 발밑(Z-1)이 공기입니다!"), *Coords.ToString());
-		return false;
-	}
+	FCollisionQueryParams Params;
+	if (IgnoreActor) Params.AddIgnoredActor(IgnoreActor);
 
-	// 3. [검사 2] 내 몸과 머리 위치가 비어있는가? (벽/천장 체크)
-	if (Body != EVoxelBlockType::Air)
-	{
-		UE_LOG(LogTemp, Error, TEXT("이동 불가 [%s]: 몸통 위치에 블록이 있습니다!"), *Coords.ToString());
-		return false;
-	}
+	TArray<FOverlapResult> Overlaps;
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(40.0f);
 
-	if (Head != EVoxelBlockType::Air)
-	{
-		UE_LOG(LogTemp, Error, TEXT("이동 불가 [%s]: 머리 위치에 블록이 있습니다!"), *Coords.ToString());
-		return false;
-	}
+	return GetWorld()->OverlapMultiByChannel(Overlaps, WorldPos, FQuat::Identity, ECC_Pawn, Sphere, Params);
+}
 
-	// 모든 조건 통과
-	return true;
+bool AVoxelWorld::IsWalkable(FIntVector Coords, AActor* IgnoreActor, FIntVector TargetCoords)
+{
+	if (GetVoxelTypeAt(Coords + FIntVector(0, 0, -1)) == EVoxelBlockType::Air) return false;
+	if (GetVoxelTypeAt(Coords) != EVoxelBlockType::Air) return false;
+
+	FIntVector MyCurrentCoords = WorldToVoxelCoords(IgnoreActor ? IgnoreActor->GetActorLocation() : FVector::ZeroVector);
+
+	if (Coords == TargetCoords || Coords == MyCurrentCoords) return true;
+
+	return !IsVoxelOccupied(Coords, IgnoreActor);
 }
 
 // 전역 좌표를 통해 특정 청크의 복쉘 타입을 가져옴
 EVoxelBlockType AVoxelWorld::GetVoxelTypeAt(FIntVector GlobalCoords)
 {
-	// 1. 어느 청크에 속하는지 계산
-	// 2. 해당 청크 액터의 Voxels 배열에서 데이터 추출
-	// (이 로직은 구현한 Chunk 관리 방식에 맞춰 추가 구현 필요)
-
-	// 탐색하려는 좌표가 어떤 청크에 속하는지 로그를 찍어봅니다.
 	for (AVoxelChunkActor* Chunk : Chunks)
 	{
-		if (Chunk->Contains(GlobalCoords)) // 청크가 이 좌표를 포함하는지 확인하는 함수가 있다면
+		if (Chunk->Contains(GlobalCoords))
 		{
 			return Chunk->GetVoxelType(GlobalCoords);
 		}
 	}
 
-	// 여기까지 오면 해당 좌표에 청크가 없다는 뜻입니다!
-	// UE_LOG(LogTemp, Error, TEXT("좌표 %s 에 해당하는 청크를 찾을 수 없음!"), *GlobalCoords.ToString());
+	UE_LOG(LogTemp, Error, TEXT("좌표 %s 에 해당하는 청크를 찾을 수 없음!"), *GlobalCoords.ToString());
 	return EVoxelBlockType::Air;
 }
 
@@ -265,4 +254,26 @@ FVector AVoxelWorld::VoxelToWorldLocation(FIntVector VoxelCoords) const
 		(VoxelCoords.Y + 0.5f) * VoxelSize,
 		(VoxelCoords.Z + 0.5f) * VoxelSize
 	);
+}
+
+FIntVector AVoxelWorld::GetNearestWalkableVoxel(FVector WorldLocation)
+{
+	FIntVector Coords = WorldToVoxelCoords(WorldLocation);
+
+	if (GetVoxelTypeAt(Coords) != EVoxelBlockType::Air)
+	{
+		while (GetVoxelTypeAt(Coords) != EVoxelBlockType::Air && Coords.Z < 100)
+		{
+			Coords.Z++;
+		}
+	}
+	else
+	{
+		while (GetVoxelTypeAt(Coords + FIntVector(0, 0, -1)) == EVoxelBlockType::Air && Coords.Z > -100)
+		{
+			Coords.Z--;
+		}
+	}
+
+	return Coords;
 }

@@ -1,6 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
@@ -25,7 +23,7 @@ public:
 	VoxelPathfinder();
 	~VoxelPathfinder();
 
-	static TArray<FIntVector> FindPath(AVoxelWorld* World, FIntVector Start, FIntVector End, int32 MaxRange);
+	static TArray<FIntVector> FindPath(class AVoxelWorld* World, FIntVector Start, FIntVector End, int32 MaxSearchRange, class AActor* Requester = nullptr);
 
 private:
 	// 맨해튼 거리 계산 ($|x1-x2| + |y1-y2| + |z1-z2|$)

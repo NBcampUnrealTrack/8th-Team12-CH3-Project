@@ -12,6 +12,7 @@ AEnemyAIMobileA::AEnemyAIMobileA()
     FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
     FirePoint->SetupAttachment(RootComponent);
     AttackRange = 1500.f;
+    LaunchPower = 4000.f;
 }
 
 void AEnemyAIMobileA::BeginPlay()
@@ -77,8 +78,6 @@ void AEnemyAIMobileA::Fire()
     if (Projectile)
     {
         FVector LaunchDirection = SpawnRotation.Vector();
-
-        float LaunchPower = 2000.f;
 
         FVector WindForce = FVector::ZeroVector;
 

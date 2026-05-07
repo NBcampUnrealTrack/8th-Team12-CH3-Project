@@ -38,4 +38,7 @@ protected:
     void OnMoveComplete(FAIRequestID RequestID, const FPathFollowingResult& Result);
 
     AVoxelWorld* GetVoxelWorld();
+
+    UPROPERTY(BlueprintReadOnly, Category = "Voxel")
+    TObjectPtr<class AVoxelWorld> VWorld;
 };
