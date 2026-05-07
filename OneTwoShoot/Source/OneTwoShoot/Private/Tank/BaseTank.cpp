@@ -1,5 +1,5 @@
-#include "BaseTank.h"
-#include "BaseProjectile.h"
+#include "../Public/Tank/BaseTank.h"
+#include "../Public/Tank/BaseProjectile.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
 #include "Kismet/GameplayStatics.h"
 

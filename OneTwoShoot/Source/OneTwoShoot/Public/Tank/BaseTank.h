@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "TankGameTypes.h" 
+#include "../Public/Game/TankGameTypes.h" 
 #include "BaseTank.generated.h"
 
 class ABaseProjectile;

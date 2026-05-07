@@ -1,10 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "VoxelWorld.h"
+#include "../Public/World/VoxelWorld.h"
 #include "Kismet/GameplayStatics.h"
-#include "VoxelChunkActor.h"
-#include "BaseProjectile.h"
+#include "../Public/World/VoxelChunkActor.h"
+#include "../Public/Tank/BaseProjectile.h"
 
 
 // Sets default values
@@ -65,7 +62,7 @@ void AVoxelWorld::RefreshChunkList()
 	UE_LOG(LogTemp, Warning, TEXT("VoxelWorld found %d voxel chunks."), Chunks.Num());
 }
 
-void AVoxelWorld::RegisterChunk(AVoxelChunkActor* Chunk) // Ã»Å© µî·Ï
+void AVoxelWorld::RegisterChunk(AVoxelChunkActor* Chunk) // Ã»Å© ï¿½ï¿½ï¿½
 {
 	if (!IsValid(Chunk))
 	{

@@ -1,7 +1,7 @@
-#include "VoxelChunkActor.h"
+#include "../Public/World/VoxelChunkActor.h"
+#include "../Public/World/VoxelWorld.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
-#include "VoxelWorld.h"
 
 
 AVoxelChunkActor::AVoxelChunkActor()
@@ -34,7 +34,7 @@ void AVoxelChunkActor::BeginPlay()
 
 	UE_LOG(LogTemp, Warning, TEXT("VoxelChunk Initialized: %d voxels"), Voxels.Num());
 	
-	//for (int32 Z = 0; Z < ChunkSizeZ; Z++) //-> °¢ Voxel¸¶´Ù ·Î±×Âï±â
+	//for (int32 Z = 0; Z < ChunkSizeZ; Z++) //-> ï¿½ï¿½ Voxelï¿½ï¿½ï¿½ï¿½ ï¿½Î±ï¿½ï¿½ï¿½ï¿½
 	//{
 	//	for (int32 Y = 0; Y < ChunkSizeY; Y++)
 	//	{
@@ -218,7 +218,7 @@ void AVoxelChunkActor::AddFace(EVoxelDirection Direction, const FVector& Base)
 	MeshData.Tangents.Append({ Tangent, Tangent, Tangent, Tangent });
 }
 
-FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const //FIntVector ÇüÅÂ ¹æÇâ º¤ÅÍ. 1*1*1 ±×¸®µå °ü¸®¿ë.
+FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const //FIntVector ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½. 1*1*1 ï¿½×¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 {
 	switch (Direction)
 	{
@@ -235,12 +235,12 @@ FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const
 	case EVoxelDirection::Down:
 		return FIntVector(0, 0, -1);
 	}
-	// Á¸ÀçÇÏ´Â ¸ðµç ¹æÇâ switch Ã³¸® - ±âÇÏ¹ýÄ¢ÀÌ¶ó switch·Î µÎ´Â °Ô ¸ÂÀ»µí?
-	checkNoEntry();//ÄÚµå°¡ ¿©±â±îÁö ³»·Á¿À¸é ÅÍÁü
-	return FIntVector::ZeroValue; // ¹°¸®ÀûÀ¸·Î Á¸ÀçÇÏÁö ¾Ê´Â ¹æÇâ µé¾î¿À¸é 000 ¹ÝÈ¯
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ switch Ã³ï¿½ï¿½ - ï¿½ï¿½ï¿½Ï¹ï¿½Ä¢ï¿½Ì¶ï¿½ switchï¿½ï¿½ ï¿½Î´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?
+	checkNoEntry();//ï¿½Úµå°¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	return FIntVector::ZeroValue; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 000 ï¿½ï¿½È¯
 }
 
-FVector AVoxelChunkActor::GetDirectionNormal(EVoxelDirection Direction) const //FIntVector ÇüÅÂÀÎ GetDirectionOffset¸¦ FVector·Î º¯È¯. Procedural Mesh¿¡¼­ Normal/Tangent¿ë
+FVector AVoxelChunkActor::GetDirectionNormal(EVoxelDirection Direction) const //FIntVector ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ GetDirectionOffsetï¿½ï¿½ FVectorï¿½ï¿½ ï¿½ï¿½È¯. Procedural Meshï¿½ï¿½ï¿½ï¿½ Normal/Tangentï¿½ï¿½
 {
 	return FVector(GetDirectionOffset(Direction));
 }

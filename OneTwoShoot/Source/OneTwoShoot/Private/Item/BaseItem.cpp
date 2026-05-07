@@ -1,4 +1,4 @@
-#include "BaseItem.h"
+#include "../Public/Item/BaseItem.h"
 #include "BaseTank.h"
 
 UBaseItem::UBaseItem()
