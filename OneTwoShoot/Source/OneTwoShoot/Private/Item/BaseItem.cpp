@@ -21,7 +21,7 @@ void UBaseItem::UseItem(ABaseTank* User)
 	}
 }
 
-bool UBaseItem::ConsumOnUse() const
+bool UBaseItem::ConsumeOnUse() const
 {
 	return true;
 }

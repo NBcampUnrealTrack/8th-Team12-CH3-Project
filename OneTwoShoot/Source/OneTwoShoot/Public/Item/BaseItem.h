@@ -38,5 +38,5 @@ public:
 	virtual void UseItem(ABaseTank* User);
 	
 	UFUNCTION(BlueprintCallable, Category = "Item Action")
-	virtual bool ConsumOnUse() const;
+	virtual bool ConsumeOnUse() const;
 };
