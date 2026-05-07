@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "TankGameTypes.h" 
+#include "../Public/Game/TankGameTypes.h" 
 #include "BaseTank.generated.h"
 
 class ABaseProjectile;
@@ -37,7 +37,7 @@ protected:
 	float CurrentHealth;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float TankBasePower = 100.0f;
+	float TankBasePower = 70.0f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aim")
 	float CurrentPitch = 45.0f;
