@@ -29,7 +29,7 @@ protected:
 	ETurnState CurrentTurnState;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn System|State")
-	EUnitType LastActiveUnit;
+	ETankUnitType LastActiveUnit;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn System|Player")
 	int32 PlayerTurnCount;

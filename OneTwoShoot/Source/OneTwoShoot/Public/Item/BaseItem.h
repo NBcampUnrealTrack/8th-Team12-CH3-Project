@@ -22,6 +22,8 @@ class ONETWOSHOOT_API UBaseItem : public UObject
 	GENERATED_BODY()
 	
 public:
+	UBaseItem();
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Data")
 	FName ItemName;
 	

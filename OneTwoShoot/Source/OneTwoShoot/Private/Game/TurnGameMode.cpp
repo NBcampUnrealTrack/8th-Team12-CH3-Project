@@ -6,7 +6,7 @@
 ATurnGameMode::ATurnGameMode()
 {
 	CurrentTurnState = ETurnState::Wait;
-	LastActiveUnit = EUnitType::None;
+	LastActiveUnit = ETankUnitType::None;
 	PlayerTurnCount = 0;
 	CurrentPlayerReloadSpeed = EReloadSpeed::Normal;
 }
@@ -26,7 +26,7 @@ void ATurnGameMode::StartWave()
 	//LastActiveUnit = EUnitType::Enemy;
 
 	// 테스트 용, 플레이어가 만들어지지 않아서 바로 EnemyAI 턴으로 전환하기 위함
-	LastActiveUnit = EUnitType::Player;
+	LastActiveUnit = ETankUnitType::Player;
 
 	PlayerTurnCount = 0;
 	
@@ -43,7 +43,7 @@ void ATurnGameMode::EndCurrentTurn()
 
 void ATurnGameMode::DetermineNextTurn()
 {
-	if (LastActiveUnit == EUnitType::Player)
+	if (LastActiveUnit == ETankUnitType::Player)
 	{
 		PlayerTurnCount++;
 		
@@ -65,12 +65,12 @@ void ATurnGameMode::DetermineNextTurn()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("보너스 차례를 획득합니다. 플레이어가 연속 행동합니다."));
 			CurrentTurnState = ETurnState::PlayerTurn;
-			LastActiveUnit = EUnitType::None;
+			LastActiveUnit = ETankUnitType::None;
 			return;
 		}
 		
 		CurrentTurnState = ETurnState::EnemyTurn;
-		LastActiveUnit = EUnitType::Enemy;
+		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
 	} 
 	else
@@ -81,7 +81,7 @@ void ATurnGameMode::DetermineNextTurn()
 			PlayerTurnCount++;
 			
 			CurrentTurnState = ETurnState::EnemyTurn;
-			LastActiveUnit = EUnitType::Enemy;
+			LastActiveUnit = ETankUnitType::Enemy;
 			
 			StartEnemyGroupTurn();
 			return;
@@ -89,7 +89,7 @@ void ATurnGameMode::DetermineNextTurn()
 		
 		UE_LOG(LogTemp, Warning, TEXT("플레이어 차례 시작"));
 		CurrentTurnState = ETurnState::PlayerTurn;
-		LastActiveUnit = EUnitType::Player;
+		LastActiveUnit = ETankUnitType::Player;
 	}
 }
 

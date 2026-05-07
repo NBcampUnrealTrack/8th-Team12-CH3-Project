@@ -30,7 +30,7 @@ enum class ETurnState : uint8
 };
 
 UENUM(BlueprintType)
-enum class EUnitType : uint8
+enum class ETankUnitType : uint8
 {
 	None,
 	Player,
