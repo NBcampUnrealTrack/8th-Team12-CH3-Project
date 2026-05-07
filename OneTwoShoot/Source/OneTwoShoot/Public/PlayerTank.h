@@ -13,6 +13,7 @@ public:
 	APlayerTank();
 	
 protected:
+	/// ----- 입력 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* MovingMappingContext;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -24,10 +25,20 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* LookAction;
 	
+	/// ----- 드론 이동 속도
+	UPROPERTY(EditAnywhere, Category = "Input|Drone")
+	float DroneMoveSpeed = 1000.0f;
+	/// ----- 드론 뷰일 때 카메라가 중심(탱크)에서 얼마나 떨어져 있는지 저장
+	UPROPERTY(VisibleAnywhere, Category = "Input|Drone")
+	FVector DroneOffset = FVector::ZeroVector;
+	
+	/// ----- 카메라 매핑
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class USpringArmComponent* SpringArm;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
 	class UCameraComponent* Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	class UInputAction* ToggleCameraAction;
 	
 	/// ----- 바퀴 충돌 컴포넌트
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Collision", meta = (AllowPrivateAccess = "true"))
@@ -35,13 +46,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Collision", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* RightWheelCollision;
 
-	void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent);
-	void Input_Move(const struct FInputActionValue& Value);
-	void Input_Turn(const struct FInputActionValue& Value);
-	void Input_Look(const FInputActionValue& Value);
+	/// ----- 변수 묶음
 	float CalculateActiveSpeed() const;
 	float CalculateActiveRotationSpeed() const;
 	bool CanMove() const;
+	bool bIsDroneView = false;
 	
+	/// ----- 함수 묶음
+	void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent);
+	void MoveTank(float Value);
+	void MoveDrone(float Value);
+	void Input_Move(const struct FInputActionValue& Value);
+	void Input_Turn(const struct FInputActionValue& Value);
+	void Input_Look(const FInputActionValue& Value);
+	void ToggleCameraView();
 	virtual void BeginPlay() override;
 };
