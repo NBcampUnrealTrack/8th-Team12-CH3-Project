@@ -1,10 +1,10 @@
-﻿#include "../Public/Tank/Enemy/EnemyAIMobile.h"
+﻿#include "../Public/Tank/Enemy/BaseEnemyTankMobile.h"
 #include "../Public/World/VoxelPathfinder.h"
 #include "../Public/World/VoxelWorld.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AEnemyAIMobile::AEnemyAIMobile()
+ABaseEnemyTankMobile::ABaseEnemyTankMobile()
 {
     MoveRange = 3;
     bIsMoving = false;
@@ -15,7 +15,7 @@ AEnemyAIMobile::AEnemyAIMobile()
     }
 }
 
-void AEnemyAIMobile::BeginPlay()
+void ABaseEnemyTankMobile::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -42,7 +42,7 @@ void AEnemyAIMobile::BeginPlay()
     }
 }
 
-void AEnemyAIMobile::OnTurnStart()
+void ABaseEnemyTankMobile::OnTurnStart()
 {
     Super::OnTurnStart();
 
@@ -50,7 +50,7 @@ void AEnemyAIMobile::OnTurnStart()
     DecideAction();
 }
 
-void AEnemyAIMobile::MoveOnVoxelGrid()
+void ABaseEnemyTankMobile::MoveOnVoxelGrid()
 {
     if (!VWorld || !TargetPlayer) return;
 
@@ -75,7 +75,7 @@ void AEnemyAIMobile::MoveOnVoxelGrid()
     ExecuteVoxelMovement(FullPath);
 }
 
-void AEnemyAIMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
+void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
 {
     if (IsInAttackRange())
     {
@@ -123,11 +123,11 @@ void AEnemyAIMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
             return;
         }
 
-        AIC->GetPathFollowingComponent()->OnRequestFinished.AddUObject(this, &AEnemyAIMobile::OnMoveComplete);
+        AIC->GetPathFollowingComponent()->OnRequestFinished.AddUObject(this, &ABaseEnemyTankMobile::OnMoveComplete);
     }
 }
 
-void AEnemyAIMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFollowingResult& Result)
+void ABaseEnemyTankMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFollowingResult& Result)
 {
     UE_LOG(LogTemp, Warning, TEXT("[%s] 이동 완료 - 성공 여부: %s"),
         *GetName(), Result.IsSuccess() ? TEXT("성공") : TEXT("실패"));
@@ -144,14 +144,14 @@ void AEnemyAIMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFollowing
     }
 }
 
-void AEnemyAIMobile::DecideAction()
+void ABaseEnemyTankMobile::DecideAction()
 {
     // 하위 클래스에서 구현
     // ex) 자폭형 → 근접 여부 확인 후 폭발
     //     이동형 포격 → Aim() → Fire()
 }
 
-AVoxelWorld* AEnemyAIMobile::GetVoxelWorld()
+AVoxelWorld* ABaseEnemyTankMobile::GetVoxelWorld()
 {
     AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass());
     return Cast<AVoxelWorld>(FoundActor);

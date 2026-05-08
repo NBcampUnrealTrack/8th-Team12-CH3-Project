@@ -1,5 +1,5 @@
 ﻿#include "../Public/Game/TurnGameMode.h"
-#include "../Public/Tank/Enemy/EnemyAIBase.h"
+#include "../Public/Tank/Enemy/BaseEnemyTank.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -99,12 +99,12 @@ void ATurnGameMode::StartEnemyGroupTurn()
 	
 	// 1. 월드 내 모든 적 AI를 찾아 AliveEnemies 리스트에 담기
 	TArray<AActor*> FoundEnemies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnemyAIBase::StaticClass(), FoundEnemies);
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseEnemyTank::StaticClass(), FoundEnemies);
 
 	AliveEnemies.Empty();
 	for (AActor* EnemyActor : FoundEnemies)
 	{
-		AEnemyAIBase* Enemy = Cast<AEnemyAIBase>(EnemyActor);
+		ABaseEnemyTank* Enemy = Cast<ABaseEnemyTank>(EnemyActor);
 		// 살아있는 적만 추가
 		if (Enemy && !Enemy->IsDead())
 		{
@@ -133,7 +133,7 @@ void ATurnGameMode::ContinueEnemyGroupTurn()
 		return;
 	}
 
-	AEnemyAIBase* CurrentEnemy = Cast<AEnemyAIBase>(AliveEnemies[CurrentEnemyIndex]);
+	ABaseEnemyTank* CurrentEnemy = Cast<ABaseEnemyTank>(AliveEnemies[CurrentEnemyIndex]);
 
 	if (IsValid(CurrentEnemy) && !CurrentEnemy->IsDead())
 	{

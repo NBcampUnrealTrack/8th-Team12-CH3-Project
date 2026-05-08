@@ -3,19 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyAIMobile.h"
-#include "EnemyAIMobileBossBase.generated.h"
+#include "BaseEnemyTankMobile.h"
+#include "BaseEnemyTankMobileBoss.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ONETWOSHOOT_API AEnemyAIMobileBossBase : public AEnemyAIMobile
+class ONETWOSHOOT_API ABaseEnemyTankMobileBoss : public ABaseEnemyTankMobile
 {
     GENERATED_BODY()
 
 public:
-    AEnemyAIMobileBossBase();
+    ABaseEnemyTankMobileBoss();
 
 protected:
     virtual void BeginPlay() override;

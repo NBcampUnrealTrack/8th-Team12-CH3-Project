@@ -2,21 +2,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyAIBase.h"
+#include "BaseEnemyTank.h"
 #include "AIController.h"
 #include "Navigation/PathFollowingComponent.h"
-#include "EnemyAIMobile.generated.h"
+#include "BaseEnemyTankMobile.generated.h"
 
 // 전방 선언
 class AVoxelWorld;
 
 UCLASS()
-class ONETWOSHOOT_API AEnemyAIMobile : public AEnemyAIBase
+class ONETWOSHOOT_API ABaseEnemyTankMobile : public ABaseEnemyTank
 {
     GENERATED_BODY()
 
 public:
-    AEnemyAIMobile();
+    ABaseEnemyTankMobile();
 
 protected:
     virtual void BeginPlay() override;

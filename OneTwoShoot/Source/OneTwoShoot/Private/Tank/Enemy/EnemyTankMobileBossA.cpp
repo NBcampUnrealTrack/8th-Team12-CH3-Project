@@ -1,8 +1,8 @@
-﻿#include "../Public/Tank/Enemy/EnemyAIMobileBossA.h"
+﻿#include "../Public/Tank/Enemy/EnemyTankMobileBossA.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "Kismet/KismetMathLibrary.h"
 
-AEnemyAIMobileBossA::AEnemyAIMobileBossA()
+AEnemyTankMobileBossA::AEnemyTankMobileBossA()
 {
     FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
     FirePoint->SetupAttachment(RootComponent);
@@ -10,12 +10,12 @@ AEnemyAIMobileBossA::AEnemyAIMobileBossA()
     ShootPower = 4000.f;
 }
 
-void AEnemyAIMobileBossA::BeginPlay()
+void AEnemyTankMobileBossA::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void AEnemyAIMobileBossA::ExecutePattern()
+void AEnemyTankMobileBossA::ExecutePattern()
 {
     if (!TargetPlayer)
     {
@@ -46,20 +46,20 @@ void AEnemyAIMobileBossA::ExecutePattern()
     OnTurnEnd();
 }
 
-void AEnemyAIMobileBossA::Aim()
+void AEnemyTankMobileBossA::Aim()
 {
     FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
     FRotator LookAt = Direction.Rotation();
     SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
 }
 
-void AEnemyAIMobileBossA::Pattern_SingleShot()
+void AEnemyTankMobileBossA::Pattern_SingleShot()
 {
     FireProjectile(GetActorRotation());
     UE_LOG(LogTemp, Warning, TEXT("보스 A 1발 발사!"));
 }
 
-void AEnemyAIMobileBossA::Pattern_SpreadShot(int32 ProjectileCount, float SpreadAngle)
+void AEnemyTankMobileBossA::Pattern_SpreadShot(int32 ProjectileCount, float SpreadAngle)
 {
     float StartAngle = -SpreadAngle * ((ProjectileCount - 1) / 2.0f);
 
@@ -74,7 +74,7 @@ void AEnemyAIMobileBossA::Pattern_SpreadShot(int32 ProjectileCount, float Spread
     UE_LOG(LogTemp, Warning, TEXT("보스 A [%d]발 발사!"), ProjectileCount);
 }
 
-void AEnemyAIMobileBossA::FireProjectile(FRotator SpawnRotation)
+void AEnemyTankMobileBossA::FireProjectile(FRotator SpawnRotation)
 {
     if (!ProjectileClass || !FirePoint) return;
 

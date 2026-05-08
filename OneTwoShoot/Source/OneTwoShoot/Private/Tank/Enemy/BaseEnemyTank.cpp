@@ -1,11 +1,11 @@
-﻿#include "../Public/Tank/Enemy/EnemyAIBase.h"
+﻿#include "../Public/Tank/Enemy/BaseEnemyTank.h"
 #include "../Public/World/VoxelWorld.h"
 #include "../Public/World/VoxelPathfinder.h"
 #include "../Public/Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AEnemyAIBase::AEnemyAIBase()
+ABaseEnemyTank::ABaseEnemyTank()
 {
     PrimaryActorTick.bCanEverTick = true;
 
@@ -23,19 +23,19 @@ AEnemyAIBase::AEnemyAIBase()
     }
 }
 
-void AEnemyAIBase::BeginPlay()
+void ABaseEnemyTank::BeginPlay()
 {
     Super::BeginPlay();
     CurrentHealth = MaxHealth;
     PlayerCheck();
 }
 
-void AEnemyAIBase::Tick(float DeltaTime)
+void ABaseEnemyTank::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 }
 
-float AEnemyAIBase::TakeDamage(
+float ABaseEnemyTank::TakeDamage(
     float DamageAmount,
     FDamageEvent const& DamageEvent,
     AController* EventInstigator,
@@ -50,7 +50,7 @@ float AEnemyAIBase::TakeDamage(
     return ActualDamage;
 }
 
-void AEnemyAIBase::OnDamaged(int32 DamageAmount)
+void ABaseEnemyTank::OnDamaged(int32 DamageAmount)
 {
     CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0, MaxHealth);
 
@@ -62,7 +62,7 @@ void AEnemyAIBase::OnDamaged(int32 DamageAmount)
     }
 }
 
-void AEnemyAIBase::OnDeath()
+void ABaseEnemyTank::OnDeath()
 {
     if (bIsDead) return;
     bIsDead = true;
@@ -74,17 +74,17 @@ void AEnemyAIBase::OnDeath()
     SetLifeSpan(3.f);
 }
 
-void AEnemyAIBase::DropItem()
+void ABaseEnemyTank::DropItem()
 {
     // 하위 클래스에서 override하여 랜덤 아이템 스폰 구현
 }
 
-void AEnemyAIBase::PlayerCheck()
+void ABaseEnemyTank::PlayerCheck()
 {
     TargetPlayer = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
 }
 
-bool AEnemyAIBase::IsInAttackRange()
+bool ABaseEnemyTank::IsInAttackRange()
 {
     if (!TargetPlayer) return false;
 
@@ -114,14 +114,14 @@ bool AEnemyAIBase::IsInAttackRange()
     return Distance <= AttackRange;
 }
 
-void AEnemyAIBase::OnTurnStart()
+void ABaseEnemyTank::OnTurnStart()
 {
     if (bIsDead) return;
     UE_LOG(LogTemp, Warning, TEXT("[%s] OnTurnStart 호출됨"), *GetName());
     // 하위 클래스에서 오버라이드하여 각자 행동 구현
 }
 
-void AEnemyAIBase::OnTurnEnd()
+void ABaseEnemyTank::OnTurnEnd()
 {
     TurnActionCount = MaxTurnActionCount;
     // 턴 종료 시 공통 처리
@@ -135,12 +135,12 @@ void AEnemyAIBase::OnTurnEnd()
     }
 }
 
-int32 AEnemyAIBase::GetCurrentHealth() const
+int32 ABaseEnemyTank::GetCurrentHealth() const
 {
     return CurrentHealth;
 }
 
-bool AEnemyAIBase::IsDead() const
+bool ABaseEnemyTank::IsDead() const
 {
     return bIsDead;
 }

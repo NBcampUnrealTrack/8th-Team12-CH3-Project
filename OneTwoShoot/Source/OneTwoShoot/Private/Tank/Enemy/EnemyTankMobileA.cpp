@@ -1,11 +1,11 @@
 ﻿
 
-#include "../Public/Tank/Enemy/EnemyAIMobileA.h"
+#include "../Public/Tank/Enemy/EnemyTankMobileA.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
-AEnemyAIMobileA::AEnemyAIMobileA()
+AEnemyTankMobileA::AEnemyTankMobileA()
 {
     CurrentAimAngle = 0.f;
 
@@ -15,12 +15,12 @@ AEnemyAIMobileA::AEnemyAIMobileA()
     LaunchPower = 4000.f;
 }
 
-void AEnemyAIMobileA::BeginPlay()
+void AEnemyTankMobileA::BeginPlay()
 {
     Super::BeginPlay();
 }
 
-void AEnemyAIMobileA::DecideAction()
+void AEnemyTankMobileA::DecideAction()
 {
     if (!IsInAttackRange() && TurnActionCount>0)
     {
@@ -41,7 +41,7 @@ void AEnemyAIMobileA::DecideAction()
     }
 }
 
-void AEnemyAIMobileA::Aim()
+void AEnemyTankMobileA::Aim()
 {
     if (!TargetPlayer) return;
 
@@ -54,7 +54,7 @@ void AEnemyAIMobileA::Aim()
         *GetName(), LookAt.Yaw, LookAt.Pitch);
 }
 
-void AEnemyAIMobileA::Fire()
+void AEnemyTankMobileA::Fire()
 {
     if (!ProjectileClass) return;
     if (!FirePoint) return;

@@ -3,15 +3,15 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "EnemyAIBase.generated.h"
+#include "BaseEnemyTank.generated.h"
 
 UCLASS()
-class ONETWOSHOOT_API AEnemyAIBase : public ACharacter
+class ONETWOSHOOT_API ABaseEnemyTank : public ACharacter
 {
     GENERATED_BODY()
 
 public:
-    AEnemyAIBase();
+    ABaseEnemyTank();
 
 protected:
     virtual void BeginPlay() override;

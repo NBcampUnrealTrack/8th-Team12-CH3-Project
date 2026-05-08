@@ -1,7 +1,7 @@
-﻿#include "../Public/Tank/Enemy/EnemyAIStationary.h"
+﻿#include "../Public/Tank/Enemy/BaseEnemyTanKStationary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-AEnemyAIStationary::AEnemyAIStationary()
+ABaseEnemyTanKStationary::ABaseEnemyTanKStationary()
 {
     AttackRange = 2000.f;
     CurrentAimAngle = 0.f;
@@ -13,13 +13,13 @@ AEnemyAIStationary::AEnemyAIStationary()
     }
 }
 
-void AEnemyAIStationary::BeginPlay()
+void ABaseEnemyTanKStationary::BeginPlay()
 {
     Super::BeginPlay();
 }
 
 // 플레이어 방향에 따른 회전
-void AEnemyAIStationary::Aim()
+void ABaseEnemyTanKStationary::Aim()
 {
     if (!TargetPlayer) return;
 
@@ -33,14 +33,14 @@ void AEnemyAIStationary::Aim()
 }
 
 // 사격 로직
-void AEnemyAIStationary::Fire()
+void ABaseEnemyTanKStationary::Fire()
 {
     // 하위 클래스(AEnemyCannon 등)에서 구현
     // 투사체 스폰, 발사 등
 }
 
 // 턴 시작
-void AEnemyAIStationary::OnTurnStart()
+void ABaseEnemyTanKStationary::OnTurnStart()
 {
     Super::OnTurnStart();
     if (IsInAttackRange())

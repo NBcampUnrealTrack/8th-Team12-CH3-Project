@@ -1,8 +1,8 @@
-﻿#include "../Public/Tank/Enemy/EnemyAIMobileBossBase.h"
+﻿#include "../Public/Tank/Enemy/BaseEnemyTankMobileBoss.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
-AEnemyAIMobileBossBase::AEnemyAIMobileBossBase()
+ABaseEnemyTankMobileBoss::ABaseEnemyTankMobileBoss()
 {
     CurrentPhase = 0;
     bIsExecutingPattern = false;
@@ -15,7 +15,7 @@ AEnemyAIMobileBossBase::AEnemyAIMobileBossBase()
     MoveRange = 300.f;
 }
 
-void AEnemyAIMobileBossBase::BeginPlay()
+void ABaseEnemyTankMobileBoss::BeginPlay()
 {
     Super::BeginPlay();
 
@@ -25,7 +25,7 @@ void AEnemyAIMobileBossBase::BeginPlay()
     UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 스폰"), *GetName());
 }
 
-void AEnemyAIMobileBossBase::OnTurnStart()
+void ABaseEnemyTankMobileBoss::OnTurnStart()
 {
     if (bIsDead) return;
 
@@ -40,7 +40,7 @@ void AEnemyAIMobileBossBase::OnTurnStart()
     Super::OnTurnStart();
 }
 
-void AEnemyAIMobileBossBase::DecideAction()
+void ABaseEnemyTankMobileBoss::DecideAction()
 {
     if (IsInAttackRange())
     {
@@ -59,14 +59,14 @@ void AEnemyAIMobileBossBase::DecideAction()
     }
 }
 
-void AEnemyAIMobileBossBase::OnDamaged(int32 DamageAmount)
+void ABaseEnemyTankMobileBoss::OnDamaged(int32 DamageAmount)
 {
     Super::OnDamaged(DamageAmount);
 
     CheckPhaseTransition();
 }
 
-void AEnemyAIMobileBossBase::CheckPhaseTransition()
+void ABaseEnemyTankMobileBoss::CheckPhaseTransition()
 {
     float HealthRatio = (float)CurrentHealth / (float)MaxHealth;
 
@@ -81,7 +81,7 @@ void AEnemyAIMobileBossBase::CheckPhaseTransition()
     }
 }
 
-void AEnemyAIMobileBossBase::OnPhaseChanged(int32 NewPhase)
+void ABaseEnemyTankMobileBoss::OnPhaseChanged(int32 NewPhase)
 {
     UE_LOG(LogTemp, Warning, TEXT("[%s] 페이즈 %d 전환!"), *GetName(), NewPhase);
 
@@ -91,13 +91,13 @@ void AEnemyAIMobileBossBase::OnPhaseChanged(int32 NewPhase)
     // 하위 클래스에서 페이즈별 행동 추가
 }
 
-void AEnemyAIMobileBossBase::ExecutePattern()
+void ABaseEnemyTankMobileBoss::ExecutePattern()
 {
     UE_LOG(LogTemp, Warning, TEXT("[%s] 기본 패턴 실행 (하위 클래스에서 구현 필요)"), *GetName());
 }
 
 // UI 제작 후 연결.
-void AEnemyAIMobileBossBase::ShowWarningUI(float Duration)
+void ABaseEnemyTankMobileBoss::ShowWarningUI(float Duration)
 {
     if (!WarningUIClass) return;
 
@@ -115,7 +115,7 @@ void AEnemyAIMobileBossBase::ShowWarningUI(float Duration)
 }
 
 // 체력 바 제작 후 연결
-void AEnemyAIMobileBossBase::ShowBossHealthBar()
+void ABaseEnemyTankMobileBoss::ShowBossHealthBar()
 {
     if (!BossHealthBarClass) return;
 
@@ -126,7 +126,7 @@ void AEnemyAIMobileBossBase::ShowBossHealthBar()
     }
 }
 
-void AEnemyAIMobileBossBase::OnDeath()
+void ABaseEnemyTankMobileBoss::OnDeath()
 {
     if (BossHealthBarWidget)
     {
