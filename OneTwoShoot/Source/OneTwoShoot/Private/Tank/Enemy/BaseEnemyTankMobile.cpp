@@ -6,7 +6,6 @@
 
 ABaseEnemyTankMobile::ABaseEnemyTankMobile()
 {
-    MoveRange = 3;
     bIsMoving = false;
 
     if (GetCharacterMovement())
@@ -70,9 +69,13 @@ void ABaseEnemyTankMobile::MoveOnVoxelGrid()
         return;
     }
 
+    // 전체 경로 중 '다음 한 칸'만 담아서 보냅니다.
+    TArray<FIntVector> NextStepPath;
+    NextStepPath.Add(FullPath[0]);
+
     UE_LOG(LogTemp, Warning, TEXT("[%s] 경로 찾기 성공: %d칸 이동 시작"), *GetName(), FullPath.Num());
     bIsMoving = true;
-    ExecuteVoxelMovement(FullPath);
+    ExecuteVoxelMovement(NextStepPath);
 }
 
 void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
@@ -96,11 +99,12 @@ void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
 
     bIsMoving = true;
     FIntVector NextStepCoords = Path[0];
-    CurrentRemainingPath = Path;
-    CurrentRemainingPath.RemoveAt(0);
+
+    //CurrentRemainingPath = Path;
+    //CurrentRemainingPath.RemoveAt(0);
 
     FVector TargetWorldPos = VWorld->VoxelToWorldLocation(NextStepCoords);
-    TargetWorldPos.Z += 50.0f; // VoxelSize가 100이라면 절반 정도 위로 보정
+    TargetWorldPos.Z += 50.0f; // VoxelSize가 100이라서 절반 정도 위로 보정
 
     AAIController* AIC = Cast<AAIController>(GetController());
     if (AIC)
@@ -134,7 +138,8 @@ void ABaseEnemyTankMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFol
 
     if (Result.IsSuccess())
     {
-        ExecuteVoxelMovement(CurrentRemainingPath);
+        //ExecuteVoxelMovement(CurrentRemainingPath);
+        DecideAction();
     }
     else
     {

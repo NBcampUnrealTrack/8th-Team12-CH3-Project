@@ -53,7 +53,7 @@ TArray<FIntVector> VoxelPathfinder::FindPath(AVoxelWorld* World, FIntVector Star
 {
     TArray<FIntVector> FullPath;
 
-    // 시작점/종착점 검사 시에도 Requester를 넘겨주어야 '나 자신'을 무시합니다.
+    // 시작점/종착점 검사 시에도 Requester를 넘겨주어야 '나 자신'을 무시
     if (!World->IsWalkable(Start, Requester, End)) {
         UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: 시작 위치가 Walkable이 아님! Coords: %s"), *Start.ToString());
         return FullPath;

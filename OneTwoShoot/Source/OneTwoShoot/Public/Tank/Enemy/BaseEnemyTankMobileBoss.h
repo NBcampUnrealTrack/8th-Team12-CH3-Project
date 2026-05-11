@@ -30,12 +30,6 @@ protected:
     bool bIsExecutingPattern;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Boss|UI")
-    TSubclassOf<UUserWidget> BossHealthBarClass;
-    
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Boss|UI")
-    UUserWidget* BossHealthBarWidget;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Boss|UI")
     TSubclassOf<UUserWidget> WarningUIClass;
 
     virtual void OnTurnStart() override;
@@ -47,5 +41,4 @@ protected:
     virtual void OnPhaseChanged(int32 NewPhase);
     virtual void ExecutePattern();
     virtual void ShowWarningUI(float Duration);
-    void ShowBossHealthBar();
 };

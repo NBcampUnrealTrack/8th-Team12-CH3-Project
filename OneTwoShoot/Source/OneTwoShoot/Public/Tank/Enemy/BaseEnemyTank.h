@@ -5,6 +5,8 @@
 #include "GameFramework/Character.h"
 #include "BaseEnemyTank.generated.h"
 
+class UWidgetComponent;
+
 UCLASS()
 class ONETWOSHOOT_API ABaseEnemyTank : public ACharacter
 {
@@ -14,33 +16,27 @@ public:
     ABaseEnemyTank();
 
 protected:
+
     virtual void BeginPlay() override;
 
-    // 최대 체력
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI Status")
-    int32 MaxHealth;
+    float MaxHealth;
 
-    // 현재 체력
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI Status")
-    int32 CurrentHealth;
+    float CurrentHealth;
 
-    // 이동 속도
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI Status")
     float MoveSpeed;
 
-    // 사망 여부 플래그 (중복 사망 처리 방지)
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI Status")
     bool bIsDead;
 
-    // 탐지된 플레이어 저장
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Target")
     ACharacter* TargetPlayer;
 
-    // 데미지
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
     int32 AttackDamage;
 
-    // 공격 사거리
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
     float AttackRange;
 
@@ -52,36 +48,49 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
     int32 TurnActionCount;
 
-    // 순수 가상함수 - 하위 클래스에서 반드시 구현
     virtual void OnDamaged(int32 DamageAmount);
     virtual void OnDeath();
     virtual void DropItem();
 
     void PlayerCheck();
 
-    // 사거리 내인지 확인
     bool IsInAttackRange();
 
-    // 턴 종료 처리
     UFUNCTION()
     virtual void OnTurnEnd();
 
 public:
+
+    //체력 바 UI
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UWidgetComponent* OverheadWidget;
+    
+    //체력이 줄어드는 UI 애니메이션 부드러움 정도
+    UPROPERTY(EditAnywhere, Category = "UI")
+    float LerpSpeed = 5.f;
+
+    float TargetPercent = 1.f;
+    float CurrentPercent = 1.f;
+    FTimerHandle HPBarTimerHandle;
+
     virtual void Tick(float DeltaTime) override;
 
-    // 피격 데미지
     virtual float TakeDamage(float DamageAmount,
         struct FDamageEvent const& DamageEvent,
         AController* EventInstigator,
         AActor* DamageCauser) override;
 
-    // 현재 체력 가져오기
     UFUNCTION(BlueprintCallable, Category = "AI Status")
     int32 GetCurrentHealth() const;
 
-    // 사망 체크;
     UFUNCTION(BlueprintCallable, Category = "AI Status")
     bool IsDead() const;
+
+    //체력 바 UI 업데이트
+    void UpdateOverheadHP();
+
+    //체력 바 UI Lerp 기능
+    void HandleHPBarLerp();
 
     // 턴 시작 처리(외부 호출)
     UFUNCTION(BlueprintCallable)

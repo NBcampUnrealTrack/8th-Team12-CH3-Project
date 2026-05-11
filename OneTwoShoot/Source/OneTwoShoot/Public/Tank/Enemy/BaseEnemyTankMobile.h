@@ -21,9 +21,6 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
-    int32 MoveRange;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
     bool bIsMoving;
 

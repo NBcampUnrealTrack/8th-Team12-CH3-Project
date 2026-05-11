@@ -4,10 +4,17 @@
 #include "../Public/Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Components/TextBlock.h"
+#include "Components/ProgressBar.h"
 
 ABaseEnemyTank::ABaseEnemyTank()
 {
     PrimaryActorTick.bCanEverTick = true;
+
+    OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("EnemyHPBar"));
+    OverheadWidget->SetupAttachment(GetMesh());
+    OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
 
     MaxHealth = 100;
     CurrentHealth = MaxHealth;
@@ -28,6 +35,8 @@ void ABaseEnemyTank::BeginPlay()
     Super::BeginPlay();
     CurrentHealth = MaxHealth;
     PlayerCheck();
+
+    UpdateOverheadHP();
 }
 
 void ABaseEnemyTank::Tick(float DeltaTime)
@@ -55,6 +64,8 @@ void ABaseEnemyTank::OnDamaged(int32 DamageAmount)
     CurrentHealth = FMath::Clamp(CurrentHealth - DamageAmount, 0, MaxHealth);
 
     // 피격 로직 (애니메이션 등)은 하위 클래스에서 추가
+
+    UpdateOverheadHP();
 
     if (CurrentHealth <= 0)
     {
@@ -143,4 +154,44 @@ int32 ABaseEnemyTank::GetCurrentHealth() const
 bool ABaseEnemyTank::IsDead() const
 {
     return bIsDead;
+}
+
+void ABaseEnemyTank::UpdateOverheadHP()
+{
+    if (!OverheadWidget) return;
+
+    UUserWidget* OverheadWidgetInstance = OverheadWidget->GetUserWidgetObject();
+    if (!OverheadWidgetInstance) return;
+
+    if (UTextBlock* HPText = Cast<UTextBlock>(OverheadWidgetInstance->GetWidgetFromName(TEXT("OverHeadHP"))))
+    {
+        HPText->SetText(FText::FromString(FString::Printf(TEXT("%.0f / %.0f"), CurrentHealth, MaxHealth)));
+    }
+
+    TargetPercent = (float)CurrentHealth / (float)MaxHealth;
+
+    if (!GetWorldTimerManager().IsTimerActive(HPBarTimerHandle))
+    {
+        GetWorldTimerManager().SetTimer(HPBarTimerHandle, this, &ABaseEnemyTank::HandleHPBarLerp, 0.01f, true);
+    }
+}
+
+void ABaseEnemyTank::HandleHPBarLerp()
+{
+    CurrentPercent = FMath::FInterpTo(CurrentPercent, TargetPercent, 0.01f, LerpSpeed);
+
+    UUserWidget* WidgetInst = OverheadWidget->GetUserWidgetObject();
+    if (WidgetInst)
+    {
+        if (UProgressBar* HPBar = Cast<UProgressBar>(WidgetInst->GetWidgetFromName(TEXT("HPBar"))))
+        {
+            HPBar->SetPercent(CurrentPercent);
+        }
+    }
+
+    if (FMath::IsNearlyEqual(CurrentPercent, TargetPercent, 0.001f))
+    {
+        CurrentPercent = TargetPercent;
+        GetWorldTimerManager().ClearTimer(HPBarTimerHandle);
+    }
 }

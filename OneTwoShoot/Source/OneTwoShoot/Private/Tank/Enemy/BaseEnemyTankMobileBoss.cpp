@@ -12,7 +12,6 @@ ABaseEnemyTankMobileBoss::ABaseEnemyTankMobileBoss()
 
     MaxHealth = 500;
     AttackRange = 1500.f;
-    MoveRange = 300.f;
 }
 
 void ABaseEnemyTankMobileBoss::BeginPlay()
@@ -114,25 +113,8 @@ void ABaseEnemyTankMobileBoss::ShowWarningUI(float Duration)
     }
 }
 
-// 체력 바 제작 후 연결
-void ABaseEnemyTankMobileBoss::ShowBossHealthBar()
-{
-    if (!BossHealthBarClass) return;
-
-    BossHealthBarWidget = CreateWidget<UUserWidget>(GetWorld(), BossHealthBarClass);
-    if (BossHealthBarWidget)
-    {
-        BossHealthBarWidget->AddToViewport();
-    }
-}
-
 void ABaseEnemyTankMobileBoss::OnDeath()
 {
-    if (BossHealthBarWidget)
-    {
-        BossHealthBarWidget->RemoveFromParent();
-    }
-
     UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 처치 - 패시브 스킬 지급"), *GetName());
 
     // 패시브 스킬 지급 이벤트 발행
