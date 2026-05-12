@@ -1,6 +1,4 @@
-﻿
-
-#include "../Public/Tank/Enemy/EnemyTankMobileA.h"
+﻿#include "../Public/Tank/Enemy/EnemyTankMobileA.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
