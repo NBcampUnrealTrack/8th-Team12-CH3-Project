@@ -25,6 +25,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
 	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
 
+	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
+	bool SetVoxel(FIntVector LocalCoords, EVoxelBlockType NewType, bool bRebuildMesh = true);
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
+	bool RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh = true);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel|Edit")
+	EVoxelBlockType GetLocalVoxelType(FIntVector LocalCoords) const;
+
 	void SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld);
 
 	virtual float TakeDamage(
@@ -88,6 +97,9 @@ protected:
 
 
 	void InitializeVoxels();
+	void EnsureVoxelDataInitialized();
+	bool HasValidVoxelData() const;
+	void UpdateChunkVoxelOffsetFromLocation();
 
 	int32 GetVoxelIndex(int32 X, int32 Y, int32 Z) const;
 

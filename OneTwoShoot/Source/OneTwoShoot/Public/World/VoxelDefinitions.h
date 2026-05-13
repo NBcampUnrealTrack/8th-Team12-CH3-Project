@@ -10,9 +10,11 @@ UENUM(BlueprintType)
 enum class EVoxelBlockType : uint8
 {
 	Air,
-	Stone,
+	Grass,
 	Dirt,
-	Grass
+	Stone,
+	Steel,
+	Glass
 };
 
 UENUM(BlueprintType)

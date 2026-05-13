@@ -30,13 +30,7 @@ void AVoxelChunkActor::SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld)
 
 void AVoxelChunkActor::BeginPlay()
 {
-	// 자신의 월드 위치를 VoxelSize로 나누어 실제 복쉘 좌표(Offset)를 계산합니다.
-	ChunkVoxelOffset.X = FMath::FloorToInt(GetActorLocation().X / VoxelSize);
-	ChunkVoxelOffset.Y = FMath::FloorToInt(GetActorLocation().Y / VoxelSize);
-	ChunkVoxelOffset.Z = FMath::FloorToInt(GetActorLocation().Z / VoxelSize);
-
-	UE_LOG(LogTemp, Warning, TEXT("[%s] 위치 기반 오프셋 설정 완료: %s"),
-		*GetName(), *ChunkVoxelOffset.ToString());
+	UpdateChunkVoxelOffsetFromLocation();
 
 	Super::BeginPlay();
 
@@ -55,7 +49,7 @@ void AVoxelChunkActor::BeginPlay()
 //
 //	for (int32 i = 0; i < Voxels.Num(); i++)
 //	{
-//		Voxels[i] = EVoxelBlockType::Stone;
+//		Voxels[i] = EVoxelBlockType::Dirt;
 //	}
 //}
 
@@ -64,28 +58,35 @@ void AVoxelChunkActor::InitializeVoxels()
 	const int32 TotalVoxelCount = ChunkSizeX * ChunkSizeY * ChunkSizeZ;
 	Voxels.SetNum(TotalVoxelCount);
 
-	for (int32 Z = 0; Z < ChunkSizeZ; Z++)
+	for (EVoxelBlockType& Voxel : Voxels)
 	{
-		for (int32 Y = 0; Y < ChunkSizeY; Y++)
-		{
-			for (int32 X = 0; X < ChunkSizeX; X++)
-			{
-				int32 Index = GetVoxelIndex(X, Y, Z);
-
-				// 전역 Z좌표가 0이면 바닥(Stone), 아니면 공기(Air)
-				int32 GlobalZ = Z + ChunkVoxelOffset.Z;
-
-				if (GlobalZ <= 7)
-				{
-					Voxels[Index] = EVoxelBlockType::Stone;
-				}
-				else
-				{
-					Voxels[Index] = EVoxelBlockType::Air;
-				}
-			}
-		}
+		Voxel = EVoxelBlockType::Dirt;
 	}
+}
+
+void AVoxelChunkActor::EnsureVoxelDataInitialized()
+{
+	if (!HasValidVoxelData())
+	{
+		InitializeVoxels();
+	}
+}
+
+bool AVoxelChunkActor::HasValidVoxelData() const
+{
+	const int32 ExpectedVoxelCount = ChunkSizeX * ChunkSizeY * ChunkSizeZ;
+	return ExpectedVoxelCount > 0 && Voxels.Num() == ExpectedVoxelCount;
+}
+
+void AVoxelChunkActor::UpdateChunkVoxelOffsetFromLocation()
+{
+	// 자신의 월드 위치를 VoxelSize로 나누어 실제 복셀 좌표(Offset)를 계산합니다.
+	ChunkVoxelOffset.X = FMath::FloorToInt(GetActorLocation().X / VoxelSize);
+	ChunkVoxelOffset.Y = FMath::FloorToInt(GetActorLocation().Y / VoxelSize);
+	ChunkVoxelOffset.Z = FMath::FloorToInt(GetActorLocation().Z / VoxelSize);
+
+	UE_LOG(LogTemp, Warning, TEXT("[%s] 위치 기반 오프셋 설정 완료: %s"),
+		*GetName(), *ChunkVoxelOffset.ToString());
 }
 
 int32 AVoxelChunkActor::GetVoxelIndex(int32 X, int32 Y, int32 Z) const
@@ -114,6 +115,8 @@ bool AVoxelChunkActor::IsVoxelSolid(int32 X, int32 Y, int32 Z) const
 
 void AVoxelChunkActor::GenerateMesh()
 {
+	EnsureVoxelDataInitialized();
+
 	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_GenerateMesh);
 {
 	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_ClearArrays);
@@ -171,8 +174,50 @@ void AVoxelChunkActor::RebuildChunk()
 {
 	if (!Mesh) return;
 
-	InitializeVoxels();
+	UpdateChunkVoxelOffsetFromLocation();
+	EnsureVoxelDataInitialized();
 	GenerateMesh();
+}
+
+bool AVoxelChunkActor::SetVoxel(FIntVector LocalCoords, EVoxelBlockType NewType, bool bRebuildMesh)
+{
+	EnsureVoxelDataInitialized();
+
+	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return false;
+	}
+
+	const int32 VoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	if (!Voxels.IsValidIndex(VoxelIndex))
+	{
+		return false;
+	}
+
+	Voxels[VoxelIndex] = NewType;
+
+	if (bRebuildMesh)
+	{
+		GenerateMesh();
+	}
+
+	return true;
+}
+
+bool AVoxelChunkActor::RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh)
+{
+	return SetVoxel(LocalCoords, EVoxelBlockType::Air, bRebuildMesh);
+}
+
+EVoxelBlockType AVoxelChunkActor::GetLocalVoxelType(FIntVector LocalCoords) const
+{
+	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return EVoxelBlockType::Air;
+	}
+
+	const int32 VoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	return Voxels.IsValidIndex(VoxelIndex) ? Voxels[VoxelIndex] : EVoxelBlockType::Air;
 }
 
 FVector AVoxelChunkActor::GetRandomWorldLocationInsideChunk() const
@@ -310,6 +355,8 @@ TArray<FVector> AVoxelChunkActor::GetFaceVertices(EVoxelDirection Direction, con
 }
 void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius)
 {
+	EnsureVoxelDataInitialized();
+
 	const FVector LocalLocation = GetActorTransform().InverseTransformPosition(WorldLocation);
 
 	const int32 CenterX = FMath::FloorToInt(LocalLocation.X / VoxelSize);
@@ -425,9 +472,9 @@ void AVoxelChunkActor::DebugDestroyCenter()
 // 전역 좌표가 청크의 시작점(Offset)과 끝점(Offset + Size) 사이에 있는지 확인
 bool AVoxelChunkActor::Contains(FIntVector GlobalCoords) const
 {
-	return (GlobalCoords.X >= ChunkVoxelOffset.X && GlobalCoords.X < ChunkVoxelOffset.X + ChunkSize) &&
-		(GlobalCoords.Y >= ChunkVoxelOffset.Y && GlobalCoords.Y < ChunkVoxelOffset.Y + ChunkSize) &&
-		(GlobalCoords.Z >= ChunkVoxelOffset.Z && GlobalCoords.Z < ChunkVoxelOffset.Z + ChunkSize);
+	return (GlobalCoords.X >= ChunkVoxelOffset.X && GlobalCoords.X < ChunkVoxelOffset.X + ChunkSizeX) &&
+		(GlobalCoords.Y >= ChunkVoxelOffset.Y && GlobalCoords.Y < ChunkVoxelOffset.Y + ChunkSizeY) &&
+		(GlobalCoords.Z >= ChunkVoxelOffset.Z && GlobalCoords.Z < ChunkVoxelOffset.Z + ChunkSizeZ);
 }
 
 // 현재 복셀 청크가 어떤 타입의 블럭인지 확인
@@ -436,14 +483,6 @@ EVoxelBlockType AVoxelChunkActor::GetVoxelType(FIntVector GlobalCoords) const
 	int32 LocalX = GlobalCoords.X - ChunkVoxelOffset.X;
 	int32 LocalY = GlobalCoords.Y - ChunkVoxelOffset.Y;
 	int32 LocalZ = GlobalCoords.Z - ChunkVoxelOffset.Z;
-
-	int32 Index = LocalX + (LocalY * ChunkSize) + (LocalZ * ChunkSize * ChunkSize);
-
-	if (Voxels.IsValidIndex(Index))
-	{
-		return Voxels[Index];
-	}
-
-	return EVoxelBlockType::Air;
+	return GetLocalVoxelType(FIntVector(LocalX, LocalY, LocalZ));
 }
 
