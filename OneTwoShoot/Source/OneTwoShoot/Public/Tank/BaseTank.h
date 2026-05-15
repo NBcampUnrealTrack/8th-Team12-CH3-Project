@@ -25,6 +25,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void UpdateAimAngle(float PitchDelta, float YawDelta);
+	
+	UFUNCTION()
+	void OnProjectileExploded(FVector HitLocation, float Radius);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
@@ -37,7 +40,10 @@ protected:
 	float CurrentHealth;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	float TankBasePower = 70.0f;
+	float TankBasePower = 1500.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	float MoveSpeed = 70.0f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Aim")
 	float CurrentPitch = 45.0f;

@@ -53,7 +53,25 @@ void ABaseProjectile::FireInDirection(const FVector& ShootDirection, float Shoot
 {
 	if (ProjectileMovement)
 	{
-		ProjectileMovement->Velocity = ShootDirection * ShootPower;
+		ProjectileMovement->StopMovementImmediately();
+		ProjectileMovement->Velocity = FVector::ZeroVector;
+        
+		FVector NormalizedDir = ShootDirection.GetSafeNormal();
+        
+		if (GetRootComponent())
+		{
+			GetRootComponent()->SetWorldRotation(NormalizedDir.Rotation());
+		}
+
+		ProjectileMovement->bInitialVelocityInLocalSpace = false; 
+		ProjectileMovement->bRotationFollowsVelocity = true;
+
+		ProjectileMovement->InitialSpeed = ShootPower;
+		ProjectileMovement->MaxSpeed = ShootPower + 1000.f;
+		ProjectileMovement->Velocity = NormalizedDir * ShootPower;
+        
+		ProjectileMovement->UpdateComponentVelocity();
+
 		ConstantWindAcceleration = StageWindForce;
 	}
 }

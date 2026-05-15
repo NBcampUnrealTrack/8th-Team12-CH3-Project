@@ -19,11 +19,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputMappingContext* LookMappingContext;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputMappingContext* CombatMappingContext;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* MoveForwardAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* TurnAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* LookAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* FireAction;
 	
 	/// ----- 탑뷰 카메라 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -74,5 +78,6 @@ protected:
 	void Input_Look(const FInputActionValue& Value);
 	void ToggleCameraView();
 	void Input_Zoom(const struct FInputActionValue& Value);
+	void Input_Fire();
 	virtual void BeginPlay() override;
 };
