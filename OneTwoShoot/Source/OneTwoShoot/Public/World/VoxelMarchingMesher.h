@@ -11,9 +11,6 @@ struct FVoxelMarchingMesherSettings
 	int32 ChunkSizeY = 0;
 	int32 ChunkSizeZ = 0;
 	float VoxelSize = 100.f;
-	EVoxelRenderMode RenderMode = EVoxelRenderMode::MarchingCenter;
-	float SurfaceLevel = 0.0f;
-	int32 SteppedInterpolationSteps = 4;
 	TFunctionRef<FVoxelData(int32 X, int32 Y, int32 Z)> GetSample;
 };
 
@@ -24,8 +21,6 @@ public:
 
 private:
 	static void MarchCube(const FVoxelMarchingMesherSettings& Settings, FChunkMeshData& MeshData, int32 X, int32 Y, int32 Z, const FVoxelData Cube[8]);
-	static float GetInterpolationOffset(const FVoxelMarchingMesherSettings& Settings, float DensityA, float DensityB);
-	static float QuantizeOffset(const FVoxelMarchingMesherSettings& Settings, float Offset);
-	static EVoxelBlockType GetDominantBlockType(const FVoxelMarchingMesherSettings& Settings, const FVoxelData Cube[8]);
+	static EVoxelBlockType GetDominantBlockType(const FVoxelData Cube[8]);
 	static void AddTriangle(FChunkMeshData& MeshData, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3]);
 };

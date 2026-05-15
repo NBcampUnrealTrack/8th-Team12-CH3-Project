@@ -160,9 +160,7 @@ void AVoxelChunkActor::GenerateMesh()
 	case EVoxelRenderMode::Blocky:
 		GenerateBlockyMesh();
 		break;
-	case EVoxelRenderMode::MarchingCenter:
-	case EVoxelRenderMode::MarchingStepped:
-	case EVoxelRenderMode::MarchingSmooth:
+	case EVoxelRenderMode::Marching:
 		GenerateMarchingMesh();
 		break;
 	default:
@@ -217,9 +215,6 @@ void AVoxelChunkActor::GenerateMarchingMesh()
 			ChunkSizeY,
 			ChunkSizeZ,
 			VoxelSize,
-			RenderMode,
-			SurfaceLevel,
-			SteppedInterpolationSteps,
 			[this](int32 X, int32 Y, int32 Z)
 			{
 				return GetMarchingSample(X, Y, Z);
@@ -261,11 +256,9 @@ void AVoxelChunkActor::RebuildChunk()
 	GenerateMesh();
 }
 
-void AVoxelChunkActor::SetRenderSettings(EVoxelRenderMode NewRenderMode, float NewSurfaceLevel, int32 NewSteppedInterpolationSteps)
+void AVoxelChunkActor::SetRenderSettings(EVoxelRenderMode NewRenderMode)
 {
 	RenderMode = NewRenderMode;
-	SurfaceLevel = NewSurfaceLevel;
-	SteppedInterpolationSteps = FMath::Clamp(NewSteppedInterpolationSteps, 2, 16);
 }
 
 FVoxelData AVoxelChunkActor::GetMarchingSample(int32 X, int32 Y, int32 Z) const
@@ -339,50 +332,6 @@ bool AVoxelChunkActor::RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh)
 	return SetVoxel(LocalCoords, EVoxelBlockType::Air, bRebuildMesh);
 }
 
-bool AVoxelChunkActor::SetVoxelDensity(FIntVector LocalCoords, float NewDensity, bool bRebuildMesh)
-{
-	EnsureVoxelDataInitialized();
-
-	if (!IsMarchingCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
-	{
-		return false;
-	}
-
-	const int32 MarchingVoxelIndex = GetMarchingVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
-	if (!MarchingVoxels.IsValidIndex(MarchingVoxelIndex))
-	{
-		return false;
-	}
-
-	FVoxelData NewVoxelData = MarchingVoxels[MarchingVoxelIndex];
-	NewVoxelData.Density = NewDensity;
-	if (NewDensity > SurfaceLevel)
-	{
-		NewVoxelData.BlockType = EVoxelBlockType::Air;
-	}
-	else if (NewVoxelData.BlockType == EVoxelBlockType::Air)
-	{
-		NewVoxelData.BlockType = EVoxelBlockType::Dirt;
-	}
-	MarchingVoxels[MarchingVoxelIndex] = NewVoxelData;
-
-	if (IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
-	{
-		const int32 CellVoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
-		if (Voxels.IsValidIndex(CellVoxelIndex))
-		{
-			Voxels[CellVoxelIndex] = NewVoxelData;
-		}
-	}
-
-	if (bRebuildMesh)
-	{
-		GenerateMesh();
-	}
-
-	return true;
-}
-
 EVoxelBlockType AVoxelChunkActor::GetLocalVoxelType(FIntVector LocalCoords) const
 {
 	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
@@ -432,7 +381,7 @@ FVector AVoxelChunkActor::GetRandomWorldLocationInsideChunk() const
 
 	return GetActorTransform().TransformPosition(RandomLocalLocation);
 }
-void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius)
+bool AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius, bool bRebuildMesh)
 {
 	EnsureVoxelDataInitialized();
 
@@ -496,12 +445,13 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_GenerateMesh);
 
 	//GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Green, TEXT("Generate Mesh Called."));
-	if (bAnyVoxelDestroyed)
+	if (bAnyVoxelDestroyed && bRebuildMesh)
 	{
 		GenerateMesh();
 	}
 
 	//BP_OnDebugDestroyed(WorldLocation, Radius);
+	return bAnyVoxelDestroyed;
 }
 
 float AVoxelChunkActor::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -585,5 +535,16 @@ EVoxelBlockType AVoxelChunkActor::GetVoxelType(FIntVector GlobalCoords) const
 	int32 LocalY = GlobalCoords.Y - ChunkVoxelOffset.Y;
 	int32 LocalZ = GlobalCoords.Z - ChunkVoxelOffset.Z;
 	return GetLocalVoxelType(FIntVector(LocalX, LocalY, LocalZ));
+}
+
+FBox AVoxelChunkActor::GetChunkWorldBounds(float Padding) const
+{
+	const FVector Min = GetActorLocation();
+	const FVector Max = Min + FVector(
+		ChunkSizeX * VoxelSize,
+		ChunkSizeY * VoxelSize,
+		ChunkSizeZ * VoxelSize
+	);
+	return FBox(Min, Max).ExpandBy(Padding);
 }
 

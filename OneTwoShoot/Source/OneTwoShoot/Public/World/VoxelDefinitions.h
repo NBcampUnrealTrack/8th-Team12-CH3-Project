@@ -21,9 +21,7 @@ UENUM(BlueprintType)
 enum class EVoxelRenderMode : uint8
 {
 	Blocky,
-	MarchingCenter,
-	MarchingStepped,
-	MarchingSmooth
+	Marching
 };
 
 USTRUCT(BlueprintType)
@@ -35,7 +33,7 @@ struct FVoxelData
 	EVoxelBlockType BlockType = EVoxelBlockType::Air;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel")
-	float Density = 1.0f; //  SurfaceLevel 0 기준: 1은 공기, -1은 지형
+	float Density = 1.0f; // 현재 fixed-center Marching에서는 사용하지 않는 legacy 값이다.
 };
 
 UENUM(BlueprintType)

@@ -160,10 +160,14 @@ void AVoxelWorld::DebugDestroyRandomChunk()
 	DestroyVoxelsAtWorldLocation(ExplosionLocation, DebugDestroyRadius);
 }
 
-// 폭발 반경과 컴포넌트 bounds가 겹치는 청크만 골라 파괴 요청을 전달한다.
-// 현재 각 청크가 자기 데이터를 수정하고 즉시 메쉬를 재생성한다.
+// 폭발 반경과 겹치는 청크의 데이터부터 모두 수정한 뒤, 경계 샘플을 공유할 수 있는 이웃 청크까지 함께 재빌드한다.
+// Marching Cubes는 이웃 청크의 샘플을 읽으므로, 데이터 수정 중간에 청크별로 즉시 GenerateMesh를 호출하면 경계 잔상이 남을 수 있다.
 void AVoxelWorld::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius)
 {
+	TSet<AVoxelChunkActor*> ChunksToRebuild;
+	bool bAnyVoxelDestroyed = false;
+	const float RebuildPadding = FMath::Max(VoxelSize, 1.0f);
+
 	for (AVoxelChunkActor* Chunk : Chunks)
 	{
 		if (!IsValid(Chunk))
@@ -171,14 +175,45 @@ void AVoxelWorld::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radi
 			continue;
 		}
 
-		const FBox ChunkBounds = Chunk->GetComponentsBoundingBox();
+		const FBox ChunkBounds = Chunk->GetChunkWorldBounds();
 		const float DistanceToChunkSq = ChunkBounds.ComputeSquaredDistanceToPoint(WorldLocation);
 		if (DistanceToChunkSq <= FMath::Square(Radius))
 		{
-			Chunk->DestroyVoxelsAtWorldLocation(WorldLocation, Radius);
+			if (Chunk->DestroyVoxelsAtWorldLocation(WorldLocation, Radius, false))
+			{
+				bAnyVoxelDestroyed = true;
+				ChunksToRebuild.Add(Chunk);
+			}
 		}
 	}
 
+	if (!bAnyVoxelDestroyed)
+	{
+		return;
+	}
+
+	for (AVoxelChunkActor* Chunk : Chunks)
+	{
+		if (!IsValid(Chunk))
+		{
+			continue;
+		}
+
+		const FBox ChunkBounds = Chunk->GetChunkWorldBounds(RebuildPadding);
+		const float DistanceToChunkSq = ChunkBounds.ComputeSquaredDistanceToPoint(WorldLocation);
+		if (DistanceToChunkSq <= FMath::Square(Radius + RebuildPadding))
+		{
+			ChunksToRebuild.Add(Chunk);
+		}
+	}
+
+	for (AVoxelChunkActor* Chunk : ChunksToRebuild)
+	{
+		if (IsValid(Chunk))
+		{
+			Chunk->RebuildChunk();
+		}
+	}
 }
 
 // 에디터에서 렌더 설정을 바꾼 뒤 모든 청크에 같은 설정을 적용하고 다시 빌드한다.
@@ -194,7 +229,7 @@ void AVoxelWorld::RebuildAllChunks()
 			continue;
 		}
 
-		Chunk->SetRenderSettings(RenderMode, SurfaceLevel, SteppedInterpolationSteps);
+		Chunk->SetRenderSettings(RenderMode);
 		Chunk->RebuildChunk();
 	}
 }

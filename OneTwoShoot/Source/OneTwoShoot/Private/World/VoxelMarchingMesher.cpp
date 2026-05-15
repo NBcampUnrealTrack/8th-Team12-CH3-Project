@@ -38,7 +38,7 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 
 	for (int32 CornerIndex = 0; CornerIndex < 8; CornerIndex++)
 	{
-		if (Cube[CornerIndex].BlockType != EVoxelBlockType::Air && Cube[CornerIndex].Density <= Settings.SurfaceLevel)
+		if (Cube[CornerIndex].BlockType != EVoxelBlockType::Air)
 		{
 			VertexMask |= 1 << CornerIndex;
 		}
@@ -59,12 +59,7 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 
 		const int32 CornerA = VoxelMarchingCubes::EdgeConnection[EdgeIndex][0];
 		const int32 CornerB = VoxelMarchingCubes::EdgeConnection[EdgeIndex][1];
-		float Offset = GetInterpolationOffset(Settings, Cube[CornerA].Density, Cube[CornerB].Density);
-
-		if (Settings.RenderMode == EVoxelRenderMode::MarchingStepped)
-		{
-			Offset = QuantizeOffset(Settings, Offset);
-		}
+		const float Offset = 0.5f;
 
 		EdgeVertex[EdgeIndex].X = X + (VoxelMarchingCubes::VertexOffset[CornerA][0] + Offset * VoxelMarchingCubes::EdgeDirection[EdgeIndex][0]);
 		EdgeVertex[EdgeIndex].Y = Y + (VoxelMarchingCubes::VertexOffset[CornerA][1] + Offset * VoxelMarchingCubes::EdgeDirection[EdgeIndex][1]);
@@ -73,7 +68,7 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 	}
 
 	const int32 TriangleOrder[3] = { 0, 1, 2 };
-	const EVoxelBlockType BlockType = GetDominantBlockType(Settings, Cube);
+	const EVoxelBlockType BlockType = GetDominantBlockType(Cube);
 
 	for (int32 TriangleIndex = 0; TriangleIndex < 5; TriangleIndex++)
 	{
@@ -90,34 +85,11 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 	}
 }
 
-float FVoxelMarchingMesher::GetInterpolationOffset(const FVoxelMarchingMesherSettings& Settings, float DensityA, float DensityB)
-{
-	if (Settings.RenderMode == EVoxelRenderMode::MarchingCenter)
-	{
-		return 0.5f;
-	}
-
-	const float Delta = DensityB - DensityA;
-	if (FMath::IsNearlyZero(Delta))
-	{
-		return 0.5f;
-	}
-
-	return FMath::Clamp((Settings.SurfaceLevel - DensityA) / Delta, 0.0f, 1.0f);
-}
-
-float FVoxelMarchingMesher::QuantizeOffset(const FVoxelMarchingMesherSettings& Settings, float Offset)
-{
-	const int32 StepCount = FMath::Max(2, Settings.SteppedInterpolationSteps);
-	const float Quantized = FMath::RoundToFloat(Offset * StepCount) / StepCount;
-	return FMath::Clamp(Quantized, 0.0f, 1.0f);
-}
-
-EVoxelBlockType FVoxelMarchingMesher::GetDominantBlockType(const FVoxelMarchingMesherSettings& Settings, const FVoxelData Cube[8])
+EVoxelBlockType FVoxelMarchingMesher::GetDominantBlockType(const FVoxelData Cube[8])
 {
 	for (int32 CornerIndex = 0; CornerIndex < 8; CornerIndex++)
 	{
-		if (Cube[CornerIndex].BlockType != EVoxelBlockType::Air && Cube[CornerIndex].Density <= Settings.SurfaceLevel)
+		if (Cube[CornerIndex].BlockType != EVoxelBlockType::Air)
 		{
 			return Cube[CornerIndex].BlockType;
 		}

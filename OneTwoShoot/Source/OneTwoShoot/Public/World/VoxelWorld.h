@@ -62,22 +62,12 @@ public:
 	float DebugDestroyRadius = 200.f;
 
 	// RebuildAllChunks 호출 시 모든 청크에 적용할 렌더링 방식.
-	// Blocky는 정육면체, MarchingCenter는 중앙 보간, MarchingStepped는 단계화 보간, MarchingSmooth는 연속 보간을 의미한다.
+	// Blocky는 정육면체, Marching은 고정 중앙 샘플 기반 Marching Cubes를 의미한다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
 	EVoxelRenderMode RenderMode = EVoxelRenderMode::Blocky;
 
-	// Marching Cubes에서 지형 표면으로 판정할 Density 기준값.
-	// 일반적으로 Density <= SurfaceLevel이면 지형 내부로 본다.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
-	float SurfaceLevel = 0.0f;
-
-	// MarchingStepped 모드에서 보간 위치를 몇 단계로 양자화할지 결정한다.
-	// 예: 4단계면 0.25, 0.5, 0.75 같은 중간 경사를 만들 수 있다.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render", meta = (ClampMin = "2", ClampMax = "16"))
-	int32 SteppedInterpolationSteps = 4;
-
 	// 현재 VoxelWorld의 렌더 설정을 모든 청크에 적용하고 메쉬를 다시 생성한다.
-	// 에디터에서 RenderMode, SurfaceLevel, SteppedInterpolationSteps를 바꾼 뒤 누르는 용도다.
+	// 에디터에서 RenderMode를 바꾼 뒤 누르는 용도다.
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Voxel|Actions")
 	void RebuildAllChunks();
 
@@ -94,7 +84,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
 	EVoxelBlockType GetVoxelTypeAt(FIntVector GlobalCoords);
 
-	// 전역 복셀 좌표를 기준으로 블록 타입과 Density를 함께 조회한다.
+	// 전역 복셀 좌표를 기준으로 복셀 데이터를 조회한다.
 	// Marching Cubes가 청크 경계 샘플을 이웃 청크에서 읽기 위해 사용한다.
 	UFUNCTION(BlueprintCallable, Category = "Voxel|World")
 	FVoxelData GetVoxelDataAt(FIntVector GlobalCoords) const;

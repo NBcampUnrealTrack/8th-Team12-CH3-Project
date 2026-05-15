@@ -26,19 +26,16 @@ public:
 	void RebuildChunk();
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Render")
-	void SetRenderSettings(EVoxelRenderMode NewRenderMode, float NewSurfaceLevel, int32 NewSteppedInterpolationSteps);
+	void SetRenderSettings(EVoxelRenderMode NewRenderMode);
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
-	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
+	bool DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius, bool bRebuildMesh = true);
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
 	bool SetVoxel(FIntVector LocalCoords, EVoxelBlockType NewType, bool bRebuildMesh = true);
 
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
 	bool RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh = true);
-
-	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
-	bool SetVoxelDensity(FIntVector LocalCoords, float NewDensity, bool bRebuildMesh = true);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel|Edit")
 	EVoxelBlockType GetLocalVoxelType(FIntVector LocalCoords) const;
@@ -75,6 +72,9 @@ public:
 	// 전역 좌표를 받아 청크 내부의 복쉘 타입을 반환
 	EVoxelBlockType GetVoxelType(FIntVector GlobalCoords) const;
 
+	// 현재 메쉬 모양과 무관하게 청크가 차지하는 전체 월드 그리드 bounds를 반환한다.
+	FBox GetChunkWorldBounds(float Padding = 0.0f) const;
+
 	// 청크가 시작되는 전역 복쉘 좌표
 	UPROPERTY(EditAnywhere, Category = "Voxel")
 	FIntVector ChunkVoxelOffset;
@@ -85,12 +85,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
 	EVoxelRenderMode RenderMode = EVoxelRenderMode::Blocky;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
-	float SurfaceLevel = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render", meta = (ClampMin = "2", ClampMax = "16"))
-	int32 SteppedInterpolationSteps = 4;
 
 protected:
 	// Called when the game starts or when spawned
