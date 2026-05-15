@@ -12,18 +12,29 @@ AStageWaveManager::AStageWaveManager()
 void AStageWaveManager::BeginPlay()
 {
     Super::BeginPlay();
-    StartNextWave(); // 게임 시작 시 첫 웨이브 가동
+
+    if (StageDataTable)
+    {
+        FStageDataRow* Data = StageDataTable->FindRow<FStageDataRow>(TargetStageRowName, TEXT(""));
+        if (Data)
+        {
+            ActiveStageWaves = Data->Waves;
+            UE_LOG(LogTemp, Warning, TEXT("%s 데이터를 성공적으로 로드했습니다."), *TargetStageRowName.ToString());
+        }
+    }
+
+    StartNextWave();
 }
 
 void AStageWaveManager::StartNextWave()
 {
-    if (CurrentWaveIndex >= StageWaves.Num())
+    if (CurrentWaveIndex >= ActiveStageWaves.Num())
     {
         UE_LOG(LogTemp, Warning, TEXT("모든 웨이브 완료! 스테이지 클리어."));
         return;
     }
 
-    FWaveData& Wave = StageWaves[CurrentWaveIndex];
+    FWaveData& Wave = ActiveStageWaves[CurrentWaveIndex];
     AVoxelWorld* VWorld = Cast<AVoxelWorld>(UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass()));
 
     CurrentWaveEnemyCount = Wave.EnemiesToSpawn.Num();
