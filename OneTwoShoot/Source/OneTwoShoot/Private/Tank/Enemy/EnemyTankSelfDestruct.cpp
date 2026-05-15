@@ -15,21 +15,12 @@ AEnemyTankSelfDestruct::AEnemyTankSelfDestruct()
 
 void AEnemyTankSelfDestruct::DecideAction()
 {
-    if (IsInAttackRange())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 플레이어 인접! 자폭 시퀀스 가동"), *GetName());
-        Explode();
-    }
-    else if (TurnActionCount > 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 플레이어 추격 중... 남은 이동 횟수: %d"), *GetName(), TurnActionCount);
-        MoveOnVoxelGrid();
-        --TurnActionCount;
-    }
-    else
-    {
-        OnTurnEnd();
-    }
+    Super::DecideAction();
+}
+
+void AEnemyTankSelfDestruct::Fire()
+{
+    Explode();
 }
 
 void AEnemyTankSelfDestruct::Explode()
@@ -48,16 +39,8 @@ void AEnemyTankSelfDestruct::Explode()
         true
     );
 
-    // 2. VoxelWorld 지형 파괴 연동 (포탄 폭발 로직 재활용)
-    if (VWorld)
-    {
-        VWorld->HandleProjectileExplosion(ExplodeLocation, ExplosionRadius);
-
-        // 시각적 피드백 (필요 시 블루프린트에서 설정한 이펙트 재생)
-    }
-
     UE_LOG(LogTemp, Error, TEXT("[%s] 자폭 완료!"), *GetName());
 
     OnTurnEnd();
-    Destroy();
+    SetLifeSpan(0.1f);
 }

@@ -5,8 +5,6 @@
 
 AEnemyTankMobileA::AEnemyTankMobileA()
 {
-    CurrentAimAngle = 0.f;
-
     FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
     FirePoint->SetupAttachment(RootComponent);
     AttackRange = 1500.f;
@@ -20,37 +18,21 @@ void AEnemyTankMobileA::BeginPlay()
 
 void AEnemyTankMobileA::DecideAction()
 {
-    if (!IsInAttackRange() && TurnActionCount>0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 사거리 밖 - 재이동, 턴 카운트 [%d]"), *GetName(), TurnActionCount);
-        MoveOnVoxelGrid();
-        --TurnActionCount;
-    }
-    else if(!IsInAttackRange() && TurnActionCount <= 0)
-    {
-        OnTurnEnd();
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 사거리 안 - 조준 및 발사"), *GetName());
-        Aim();
-        Fire();
-        OnTurnEnd();
-    }
+    Super::DecideAction();
 }
 
-void AEnemyTankMobileA::Aim()
-{
-    if (!TargetPlayer) return;
-
-    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
-    FRotator LookAt = Direction.Rotation();
-    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-    CurrentAimAngle = LookAt.Pitch;
-
-    UE_LOG(LogTemp, Warning, TEXT("[%s] 조준 완료 - Yaw: %f, Pitch: %f"),
-        *GetName(), LookAt.Yaw, LookAt.Pitch);
-}
+//void AEnemyTankMobileA::Aim()
+//{
+//    if (!TargetPlayer) return;
+//
+//    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
+//    FRotator LookAt = Direction.Rotation();
+//    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
+//    CurrentAimAngle = LookAt.Pitch;
+//
+//    UE_LOG(LogTemp, Warning, TEXT("[%s] 조준 완료 - Yaw: %f, Pitch: %f"),
+//        *GetName(), LookAt.Yaw, LookAt.Pitch);
+//}
 
 void AEnemyTankMobileA::Fire()
 {

@@ -56,8 +56,10 @@ protected:
 
     bool IsInAttackRange();
 
-    UFUNCTION()
-    virtual void OnTurnEnd();
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+    float CurrentAimAngle;
+
+    virtual void Aim();
 
 public:
 
@@ -95,4 +97,8 @@ public:
     // 턴 시작 처리(외부 호출)
     UFUNCTION(BlueprintCallable)
     virtual void OnTurnStart();
+
+    // 턴 종료 처리(외부 호출)
+    UFUNCTION(BlueprintCallable)
+    virtual void OnTurnEnd();
 };

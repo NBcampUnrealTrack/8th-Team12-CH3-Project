@@ -10,9 +10,32 @@ UENUM(BlueprintType)
 enum class EVoxelBlockType : uint8
 {
 	Air,
-	Stone,
+	Grass,
 	Dirt,
-	Grass
+	Stone,
+	Steel,
+	Glass
+};
+
+UENUM(BlueprintType)
+enum class EVoxelRenderMode : uint8
+{
+	Blocky,
+	MarchingCenter,
+	MarchingStepped,
+	MarchingSmooth
+};
+
+USTRUCT(BlueprintType)
+struct FVoxelData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel")
+	EVoxelBlockType BlockType = EVoxelBlockType::Air;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel")
+	float Density = 1.0f; //  SurfaceLevel 0 기준: 1은 공기, -1은 지형
 };
 
 UENUM(BlueprintType)

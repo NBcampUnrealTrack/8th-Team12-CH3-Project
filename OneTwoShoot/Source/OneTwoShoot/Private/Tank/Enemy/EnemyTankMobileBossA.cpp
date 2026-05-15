@@ -43,15 +43,16 @@ void AEnemyTankMobileBossA::ExecutePattern()
         break;
     }
 
-    OnTurnEnd();
+    FTimerHandle ActionDelayHandle1;
+    GetWorldTimerManager().SetTimer(ActionDelayHandle1, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
 }
 
-void AEnemyTankMobileBossA::Aim()
-{
-    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
-    FRotator LookAt = Direction.Rotation();
-    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-}
+//void AEnemyTankMobileBossA::Aim()
+//{
+//    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
+//    FRotator LookAt = Direction.Rotation();
+//    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
+//}
 
 void AEnemyTankMobileBossA::Pattern_SingleShot()
 {

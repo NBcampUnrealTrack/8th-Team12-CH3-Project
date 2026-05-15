@@ -1,4 +1,6 @@
 ﻿#include "../Public/World/VoxelChunkActor.h"
+#include "../Public/World/VoxelBlockyMesher.h"
+#include "../Public/World/VoxelMarchingMesher.h"
 #include "../Public/World/VoxelWorld.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,18 +27,9 @@ void AVoxelChunkActor::SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld)
 	OwningVoxelWorld = InVoxelWorld;
 }
 
-
-
-
 void AVoxelChunkActor::BeginPlay()
 {
-	// 자신의 월드 위치를 VoxelSize로 나누어 실제 복쉘 좌표(Offset)를 계산합니다.
-	ChunkVoxelOffset.X = FMath::FloorToInt(GetActorLocation().X / VoxelSize);
-	ChunkVoxelOffset.Y = FMath::FloorToInt(GetActorLocation().Y / VoxelSize);
-	ChunkVoxelOffset.Z = FMath::FloorToInt(GetActorLocation().Z / VoxelSize);
-
-	UE_LOG(LogTemp, Warning, TEXT("[%s] 위치 기반 오프셋 설정 완료: %s"),
-		*GetName(), *ChunkVoxelOffset.ToString());
+	UpdateChunkVoxelOffsetFromLocation();
 
 	Super::BeginPlay();
 
@@ -55,7 +48,7 @@ void AVoxelChunkActor::BeginPlay()
 //
 //	for (int32 i = 0; i < Voxels.Num(); i++)
 //	{
-//		Voxels[i] = EVoxelBlockType::Stone;
+//		Voxels[i] = MakeVoxelData(EVoxelBlockType::Dirt);
 //	}
 //}
 
@@ -64,28 +57,60 @@ void AVoxelChunkActor::InitializeVoxels()
 	const int32 TotalVoxelCount = ChunkSizeX * ChunkSizeY * ChunkSizeZ;
 	Voxels.SetNum(TotalVoxelCount);
 
-	for (int32 Z = 0; Z < ChunkSizeZ; Z++)
+	for (FVoxelData& Voxel : Voxels)
 	{
-		for (int32 Y = 0; Y < ChunkSizeY; Y++)
-		{
-			for (int32 X = 0; X < ChunkSizeX; X++)
-			{
-				int32 Index = GetVoxelIndex(X, Y, Z);
-
-				// 전역 Z좌표가 0이면 바닥(Stone), 아니면 공기(Air)
-				int32 GlobalZ = Z + ChunkVoxelOffset.Z;
-
-				if (GlobalZ <= 7)
-				{
-					Voxels[Index] = EVoxelBlockType::Stone;
-				}
-				else
-				{
-					Voxels[Index] = EVoxelBlockType::Air;
-				}
-			}
-		}
+		Voxel = MakeVoxelData(EVoxelBlockType::Dirt);
 	}
+}
+
+void AVoxelChunkActor::InitializeMarchingVoxels()
+{
+	const int32 SampleCountX = ChunkSizeX + 1;
+	const int32 SampleCountY = ChunkSizeY + 1;
+	const int32 SampleCountZ = ChunkSizeZ + 1;
+	const int32 TotalSampleCount = SampleCountX * SampleCountY * SampleCountZ;
+	MarchingVoxels.SetNum(TotalSampleCount);
+
+	for (FVoxelData& Voxel : MarchingVoxels)
+	{
+		Voxel = MakeVoxelData(EVoxelBlockType::Dirt);
+	}
+}
+
+void AVoxelChunkActor::EnsureVoxelDataInitialized()
+{
+	if (!HasValidVoxelData())
+	{
+		InitializeVoxels();
+	}
+
+	if (!HasValidMarchingVoxelData())
+	{
+		InitializeMarchingVoxels();
+	}
+}
+
+bool AVoxelChunkActor::HasValidVoxelData() const
+{
+	const int32 ExpectedVoxelCount = ChunkSizeX * ChunkSizeY * ChunkSizeZ;
+	return ExpectedVoxelCount > 0 && Voxels.Num() == ExpectedVoxelCount;
+}
+
+bool AVoxelChunkActor::HasValidMarchingVoxelData() const
+{
+	const int32 ExpectedVoxelCount = (ChunkSizeX + 1) * (ChunkSizeY + 1) * (ChunkSizeZ + 1);
+	return ExpectedVoxelCount > 0 && MarchingVoxels.Num() == ExpectedVoxelCount;
+}
+
+void AVoxelChunkActor::UpdateChunkVoxelOffsetFromLocation()
+{
+	// 자신의 월드 위치를 VoxelSize로 나누어 실제 복셀 좌표(Offset)를 계산합니다.
+	ChunkVoxelOffset.X = FMath::FloorToInt(GetActorLocation().X / VoxelSize);
+	ChunkVoxelOffset.Y = FMath::FloorToInt(GetActorLocation().Y / VoxelSize);
+	ChunkVoxelOffset.Z = FMath::FloorToInt(GetActorLocation().Z / VoxelSize);
+
+	UE_LOG(LogTemp, Warning, TEXT("[%s] 위치 기반 오프셋 설정 완료: %s"),
+		*GetName(), *ChunkVoxelOffset.ToString());
 }
 
 int32 AVoxelChunkActor::GetVoxelIndex(int32 X, int32 Y, int32 Z) const
@@ -95,11 +120,25 @@ int32 AVoxelChunkActor::GetVoxelIndex(int32 X, int32 Y, int32 Z) const
 	return Index;	
 }
 
+int32 AVoxelChunkActor::GetMarchingVoxelIndex(int32 X, int32 Y, int32 Z) const
+{
+	const int32 SampleCountX = ChunkSizeX + 1;
+	const int32 SampleCountY = ChunkSizeY + 1;
+	return X + (Y * SampleCountX) + (Z * SampleCountX * SampleCountY);
+}
+
 bool AVoxelChunkActor::IsCoordinateValid(int32 X, int32 Y, int32 Z) const
 {
 	return X >= 0 && X < ChunkSizeX &&
 		Y >= 0 && Y < ChunkSizeY &&
 		Z >= 0 && Z < ChunkSizeZ;
+}
+
+bool AVoxelChunkActor::IsMarchingCoordinateValid(int32 X, int32 Y, int32 Z) const
+{
+	return X >= 0 && X <= ChunkSizeX &&
+		Y >= 0 && Y <= ChunkSizeY &&
+		Z >= 0 && Z <= ChunkSizeZ;
 }
 
 bool AVoxelChunkActor::IsVoxelSolid(int32 X, int32 Y, int32 Z) const
@@ -109,43 +148,46 @@ bool AVoxelChunkActor::IsVoxelSolid(int32 X, int32 Y, int32 Z) const
 		return false;
 	}
 
-	return Voxels[GetVoxelIndex(X, Y, Z)] != EVoxelBlockType::Air;
+	return Voxels[GetVoxelIndex(X, Y, Z)].BlockType != EVoxelBlockType::Air;
 }
 
 void AVoxelChunkActor::GenerateMesh()
 {
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_GenerateMesh);
-{
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_ClearArrays);
-	MeshData.Reset();
-}
-{
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_ReserveArrays);
-	MeshData.Reserve(50000, 75000);
-}
+	EnsureVoxelDataInitialized();
 
-{
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_LoopAndAddFaces);
-
-	for (int32 Z = 0; Z < ChunkSizeZ; Z++)
+	switch (RenderMode)
 	{
-		for (int32 Y = 0; Y < ChunkSizeY; Y++)
-		{
-			for (int32 X = 0; X < ChunkSizeX; X++)
-			{
-				if (IsVoxelSolid(X, Y, Z))
-				{
-					AddCube(X, Y, Z);
-				}
-			}
-		}
+	case EVoxelRenderMode::Blocky:
+		GenerateBlockyMesh();
+		break;
+	case EVoxelRenderMode::MarchingCenter:
+	case EVoxelRenderMode::MarchingStepped:
+	case EVoxelRenderMode::MarchingSmooth:
+		GenerateMarchingMesh();
+		break;
+	default:
+		GenerateBlockyMesh();
+		break;
 	}
 }
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_ClearMeshSection);
+
+void AVoxelChunkActor::GenerateBlockyMesh()
+{
+	FVoxelBlockyMesher::Generate(
+		FVoxelBlockyMesherSettings{
+			ChunkSizeX,
+			ChunkSizeY,
+			ChunkSizeZ,
+			VoxelSize,
+			[this](int32 X, int32 Y, int32 Z)
+			{
+				return IsVoxelSolid(X, Y, Z);
+			}
+		},
+		MeshData
+	);
 
 	Mesh->ClearAllMeshSections();
-	
-	//TRACE_CPUPROFILER_EVENT_SCOPE(Voxel_CreateMeshSection);
 
 	Mesh->CreateMeshSection_LinearColor(
 		0,
@@ -167,12 +209,217 @@ void AVoxelChunkActor::GenerateMesh()
 		VoxelMaterial ? *VoxelMaterial->GetName() : TEXT("None"));
 }
 
+void AVoxelChunkActor::GenerateMarchingMesh()
+{
+	FVoxelMarchingMesher::Generate(
+		FVoxelMarchingMesherSettings{
+			ChunkSizeX,
+			ChunkSizeY,
+			ChunkSizeZ,
+			VoxelSize,
+			RenderMode,
+			SurfaceLevel,
+			SteppedInterpolationSteps,
+			[this](int32 X, int32 Y, int32 Z)
+			{
+				return GetMarchingSample(X, Y, Z);
+			}
+		},
+		MeshData
+	);
+
+	Mesh->ClearAllMeshSections();
+
+	Mesh->CreateMeshSection_LinearColor(
+		0,
+		MeshData.Vertices,
+		MeshData.Triangles,
+		MeshData.Normals,
+		MeshData.UVs,
+		MeshData.VertexColors,
+		MeshData.Tangents,
+		true
+	);
+	if (VoxelMaterial)
+	{
+		Mesh->SetMaterial(0, VoxelMaterial);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Generated Marching Mesh: Vertices=%d / Triangles=%d"), MeshData.Vertices.Num(), MeshData.Triangles.Num() / 3);
+}
+
 void AVoxelChunkActor::RebuildChunk()
 {
 	if (!Mesh) return;
 
-	InitializeVoxels();
+	UpdateChunkVoxelOffsetFromLocation();
+	if (!OwningVoxelWorld.IsValid())
+	{
+		OwningVoxelWorld = Cast<AVoxelWorld>(UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass()));
+	}
+	EnsureVoxelDataInitialized();
 	GenerateMesh();
+}
+
+void AVoxelChunkActor::SetRenderSettings(EVoxelRenderMode NewRenderMode, float NewSurfaceLevel, int32 NewSteppedInterpolationSteps)
+{
+	RenderMode = NewRenderMode;
+	SurfaceLevel = NewSurfaceLevel;
+	SteppedInterpolationSteps = FMath::Clamp(NewSteppedInterpolationSteps, 2, 16);
+}
+
+FVoxelData AVoxelChunkActor::GetMarchingSample(int32 X, int32 Y, int32 Z) const
+{
+	if (const AVoxelWorld* VoxelWorld = OwningVoxelWorld.Get())
+	{
+		return VoxelWorld->GetVoxelDataAt(ChunkVoxelOffset + FIntVector(X, Y, Z));
+	}
+
+	if (!IsMarchingCoordinateValid(X, Y, Z))
+	{
+		return FVoxelData();
+	}
+
+	const int32 VoxelIndex = GetMarchingVoxelIndex(X, Y, Z);
+	return MarchingVoxels.IsValidIndex(VoxelIndex) ? MarchingVoxels[VoxelIndex] : FVoxelData();
+}
+
+void AVoxelChunkActor::SetMarchingSample(FIntVector LocalCoords, const FVoxelData& VoxelData)
+{
+	if (!IsMarchingCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return;
+	}
+
+	const int32 VoxelIndex = GetMarchingVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	if (MarchingVoxels.IsValidIndex(VoxelIndex))
+	{
+		MarchingVoxels[VoxelIndex] = VoxelData;
+	}
+}
+
+bool AVoxelChunkActor::SetVoxel(FIntVector LocalCoords, EVoxelBlockType NewType, bool bRebuildMesh)
+{
+	EnsureVoxelDataInitialized();
+
+	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return false;
+	}
+
+	const int32 VoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	if (!Voxels.IsValidIndex(VoxelIndex))
+	{
+		return false;
+	}
+
+	Voxels[VoxelIndex] = MakeVoxelData(NewType);
+	const FVoxelData NewVoxelData = MakeVoxelData(NewType);
+	for (int32 Z = 0; Z <= 1; Z++)
+	{
+		for (int32 Y = 0; Y <= 1; Y++)
+		{
+			for (int32 X = 0; X <= 1; X++)
+			{
+				SetMarchingSample(LocalCoords + FIntVector(X, Y, Z), NewVoxelData);
+			}
+		}
+	}
+
+	if (bRebuildMesh)
+	{
+		GenerateMesh();
+	}
+
+	return true;
+}
+
+bool AVoxelChunkActor::RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh)
+{
+	return SetVoxel(LocalCoords, EVoxelBlockType::Air, bRebuildMesh);
+}
+
+bool AVoxelChunkActor::SetVoxelDensity(FIntVector LocalCoords, float NewDensity, bool bRebuildMesh)
+{
+	EnsureVoxelDataInitialized();
+
+	if (!IsMarchingCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return false;
+	}
+
+	const int32 MarchingVoxelIndex = GetMarchingVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	if (!MarchingVoxels.IsValidIndex(MarchingVoxelIndex))
+	{
+		return false;
+	}
+
+	FVoxelData NewVoxelData = MarchingVoxels[MarchingVoxelIndex];
+	NewVoxelData.Density = NewDensity;
+	if (NewDensity > SurfaceLevel)
+	{
+		NewVoxelData.BlockType = EVoxelBlockType::Air;
+	}
+	else if (NewVoxelData.BlockType == EVoxelBlockType::Air)
+	{
+		NewVoxelData.BlockType = EVoxelBlockType::Dirt;
+	}
+	MarchingVoxels[MarchingVoxelIndex] = NewVoxelData;
+
+	if (IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		const int32 CellVoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+		if (Voxels.IsValidIndex(CellVoxelIndex))
+		{
+			Voxels[CellVoxelIndex] = NewVoxelData;
+		}
+	}
+
+	if (bRebuildMesh)
+	{
+		GenerateMesh();
+	}
+
+	return true;
+}
+
+EVoxelBlockType AVoxelChunkActor::GetLocalVoxelType(FIntVector LocalCoords) const
+{
+	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return EVoxelBlockType::Air;
+	}
+
+	const int32 VoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	return Voxels.IsValidIndex(VoxelIndex) ? Voxels[VoxelIndex].BlockType : EVoxelBlockType::Air;
+}
+
+FVoxelData AVoxelChunkActor::GetLocalVoxelData(FIntVector LocalCoords) const
+{
+	if (IsMarchingCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		const int32 MarchingVoxelIndex = GetMarchingVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+		if (MarchingVoxels.IsValidIndex(MarchingVoxelIndex))
+		{
+			return MarchingVoxels[MarchingVoxelIndex];
+		}
+	}
+
+	if (!IsCoordinateValid(LocalCoords.X, LocalCoords.Y, LocalCoords.Z))
+	{
+		return FVoxelData();
+	}
+
+	const int32 VoxelIndex = GetVoxelIndex(LocalCoords.X, LocalCoords.Y, LocalCoords.Z);
+	return Voxels.IsValidIndex(VoxelIndex) ? Voxels[VoxelIndex] : FVoxelData();
+}
+
+FVoxelData AVoxelChunkActor::MakeVoxelData(EVoxelBlockType BlockType) const
+{
+	FVoxelData VoxelData;
+	VoxelData.BlockType = BlockType;
+	VoxelData.Density = BlockType == EVoxelBlockType::Air ? 1.0f : -1.0f;
+	return VoxelData;
 }
 
 FVector AVoxelChunkActor::GetRandomWorldLocationInsideChunk() const
@@ -185,131 +432,10 @@ FVector AVoxelChunkActor::GetRandomWorldLocationInsideChunk() const
 
 	return GetActorTransform().TransformPosition(RandomLocalLocation);
 }
-void AVoxelChunkActor::AddCube(int32 X, int32 Y, int32 Z)
-{
-	const FVector Base = FVector(X, Y, Z) * VoxelSize;
-
-	for (const EVoxelDirection Direction : {
-		EVoxelDirection::Forward,
-		EVoxelDirection::Right,
-		EVoxelDirection::Back,
-		EVoxelDirection::Left,
-		EVoxelDirection::Up,
-		EVoxelDirection::Down
-	})
-	{
-		const FIntVector Offset = GetDirectionOffset(Direction);
-
-		if (!IsVoxelSolid(X + Offset.X, Y + Offset.Y, Z + Offset.Z))
-		{
-			AddFace(Direction, Base);
-		}
-	}
-}
-
-void AVoxelChunkActor::AddFace(EVoxelDirection Direction, const FVector& Base)
-{
-	const int32 StartIndex = MeshData.Vertices.Num();
-	const TArray<FVector> FaceVertices = GetFaceVertices(Direction, Base);
-	const FVector Normal = GetDirectionNormal(Direction);
-
-	MeshData.Vertices.Append(FaceVertices);
-
-	MeshData.Triangles.Add(StartIndex + 0);
-	MeshData.Triangles.Add(StartIndex + 2);
-	MeshData.Triangles.Add(StartIndex + 1);
-
-	MeshData.Triangles.Add(StartIndex + 0);
-	MeshData.Triangles.Add(StartIndex + 3);
-	MeshData.Triangles.Add(StartIndex + 2);
-
-	MeshData.Normals.Append({ Normal, Normal, Normal, Normal });
-
-	MeshData.UVs.Append({
-		FVector2D(0.f, 0.f),
-		FVector2D(1.f, 0.f),
-		FVector2D(1.f, 1.f),
-		FVector2D(0.f, 1.f)
-	});
-
-	MeshData.VertexColors.Append({
-		FLinearColor::White,
-		FLinearColor::White,
-		FLinearColor::White,
-		FLinearColor::White
-	});
-
-	const FVector TangentX = (FaceVertices[1] - FaceVertices[0]).GetSafeNormal();
-	const FProcMeshTangent Tangent(TangentX, false);
-	MeshData.Tangents.Append({ Tangent, Tangent, Tangent, Tangent });
-}
-
-FIntVector AVoxelChunkActor::GetDirectionOffset(EVoxelDirection Direction) const //FIntVector 형태 방향 벡터. 1*1*1 그리드 관리용.
-{
-	switch (Direction)
-	{
-	case EVoxelDirection::Forward:
-		return FIntVector(1, 0, 0);
-	case EVoxelDirection::Right:
-		return FIntVector(0, 1, 0);
-	case EVoxelDirection::Back:
-		return FIntVector(-1, 0, 0);
-	case EVoxelDirection::Left:
-		return FIntVector(0, -1, 0);
-	case EVoxelDirection::Up:
-		return FIntVector(0, 0, 1);
-	case EVoxelDirection::Down:
-		return FIntVector(0, 0, -1);
-	}
-	// 존재하는 모든 방향 switch 처리 - 기하법칙이라 switch로 두는 게 맞을듯?
-	checkNoEntry();//코드가 여기까지 내려오면 터짐
-	return FIntVector::ZeroValue; // 물리적으로 존재하지 않는 방향 들어오면 000 반환
-}
-
-FVector AVoxelChunkActor::GetDirectionNormal(EVoxelDirection Direction) const //FIntVector 형태인 GetDirectionOffset를 FVector로 변환. Procedural Mesh에서 Normal/Tangent용
-{
-	return FVector(GetDirectionOffset(Direction));
-}
-
-TArray<FVector> AVoxelChunkActor::GetFaceVertices(EVoxelDirection Direction, const FVector& Base) const
-{
-	constexpr int32 FaceVertexCount = 4;
-	constexpr int32 FaceVertexIndices[6][FaceVertexCount] = {
-		{ 1, 3, 7, 5 }, // Forward
-		{ 2, 6, 7, 3 }, // Right
-		{ 0, 4, 6, 2 }, // Back
-		{ 0, 1, 5, 4 }, // Left
-		{ 4, 5, 7, 6 }, // Up
-		{ 0, 2, 3, 1 }  // Down
-	};
-
-	const float S = VoxelSize;
-	const FVector BlockVertexData[8] = {
-		Base,
-		Base + FVector(S, 0.f, 0.f),
-		Base + FVector(0.f, S, 0.f),
-		Base + FVector(S, S, 0.f),
-		Base + FVector(0.f, 0.f, S),
-		Base + FVector(S, 0.f, S),
-		Base + FVector(0.f, S, S),
-		Base + FVector(S, S, S)
-	};
-
-	const int32 DirectionIndex = static_cast<int32>(Direction);
-	check(DirectionIndex >= 0 && DirectionIndex < UE_ARRAY_COUNT(FaceVertexIndices));
-
-	TArray<FVector> FaceVertices;
-	FaceVertices.Reserve(FaceVertexCount);
-
-	for (int32 VertexIndex = 0; VertexIndex < FaceVertexCount; VertexIndex++)
-	{
-		FaceVertices.Add(BlockVertexData[FaceVertexIndices[DirectionIndex][VertexIndex]]);
-	}
-
-	return FaceVertices;
-}
 void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius)
 {
+	EnsureVoxelDataInitialized();
+
 	const FVector LocalLocation = GetActorTransform().InverseTransformPosition(WorldLocation);
 
 	const int32 CenterX = FMath::FloorToInt(LocalLocation.X / VoxelSize);
@@ -336,9 +462,31 @@ void AVoxelChunkActor::DestroyVoxelsAtWorldLocation(FVector WorldLocation, float
 				if (FVector::Dist(VoxelCenter, LocalLocation) <= Radius)
 				{
 					const int32 VoxelIndex = GetVoxelIndex(X, Y, Z);
-					if (Voxels[VoxelIndex] != EVoxelBlockType::Air)
+					if (Voxels[VoxelIndex].BlockType != EVoxelBlockType::Air)
 					{
-						Voxels[VoxelIndex] = EVoxelBlockType::Air;
+						Voxels[VoxelIndex] = MakeVoxelData(EVoxelBlockType::Air);
+						bAnyVoxelDestroyed = true;
+					}
+				}
+			}
+		}
+	}
+
+	for (int32 Z = CenterZ - RadiusInVoxels; Z <= CenterZ + RadiusInVoxels + 1; Z++)
+	{
+		for (int32 Y = CenterY - RadiusInVoxels; Y <= CenterY + RadiusInVoxels + 1; Y++)
+		{
+			for (int32 X = CenterX - RadiusInVoxels; X <= CenterX + RadiusInVoxels + 1; X++)
+			{
+				if (!IsMarchingCoordinateValid(X, Y, Z)) continue;
+
+				const FVector SampleLocation = FVector(X * VoxelSize, Y * VoxelSize, Z * VoxelSize);
+				if (FVector::Dist(SampleLocation, LocalLocation) <= Radius)
+				{
+					const int32 MarchingVoxelIndex = GetMarchingVoxelIndex(X, Y, Z);
+					if (MarchingVoxels.IsValidIndex(MarchingVoxelIndex) && MarchingVoxels[MarchingVoxelIndex].BlockType != EVoxelBlockType::Air)
+					{
+						MarchingVoxels[MarchingVoxelIndex] = MakeVoxelData(EVoxelBlockType::Air);
 						bAnyVoxelDestroyed = true;
 					}
 				}
@@ -425,9 +573,9 @@ void AVoxelChunkActor::DebugDestroyCenter()
 // 전역 좌표가 청크의 시작점(Offset)과 끝점(Offset + Size) 사이에 있는지 확인
 bool AVoxelChunkActor::Contains(FIntVector GlobalCoords) const
 {
-	return (GlobalCoords.X >= ChunkVoxelOffset.X && GlobalCoords.X < ChunkVoxelOffset.X + ChunkSize) &&
-		(GlobalCoords.Y >= ChunkVoxelOffset.Y && GlobalCoords.Y < ChunkVoxelOffset.Y + ChunkSize) &&
-		(GlobalCoords.Z >= ChunkVoxelOffset.Z && GlobalCoords.Z < ChunkVoxelOffset.Z + ChunkSize);
+	return (GlobalCoords.X >= ChunkVoxelOffset.X && GlobalCoords.X < ChunkVoxelOffset.X + ChunkSizeX) &&
+		(GlobalCoords.Y >= ChunkVoxelOffset.Y && GlobalCoords.Y < ChunkVoxelOffset.Y + ChunkSizeY) &&
+		(GlobalCoords.Z >= ChunkVoxelOffset.Z && GlobalCoords.Z < ChunkVoxelOffset.Z + ChunkSizeZ);
 }
 
 // 현재 복셀 청크가 어떤 타입의 블럭인지 확인
@@ -436,14 +584,6 @@ EVoxelBlockType AVoxelChunkActor::GetVoxelType(FIntVector GlobalCoords) const
 	int32 LocalX = GlobalCoords.X - ChunkVoxelOffset.X;
 	int32 LocalY = GlobalCoords.Y - ChunkVoxelOffset.Y;
 	int32 LocalZ = GlobalCoords.Z - ChunkVoxelOffset.Z;
-
-	int32 Index = LocalX + (LocalY * ChunkSize) + (LocalZ * ChunkSize * ChunkSize);
-
-	if (Voxels.IsValidIndex(Index))
-	{
-		return Voxels[Index];
-	}
-
-	return EVoxelBlockType::Air;
+	return GetLocalVoxelType(FIntVector(LocalX, LocalY, LocalZ));
 }
 

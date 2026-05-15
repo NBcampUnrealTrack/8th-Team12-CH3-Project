@@ -8,38 +8,49 @@ AEnemyTanKStationaryA::AEnemyTanKStationaryA()
     FirePoint->SetupAttachment(RootComponent);
 
     AttackRange = 3000.f;
-    MaxChargeTurns = 1;
+    MaxChargeTurns = 2; // 예: 2턴 주기 사격
     CurrentChargeTurns = 0;
 }
 
 void AEnemyTanKStationaryA::OnTurnStart()
 {
-    // 부모 클래스의 OnTurnStart를 부르면 즉시 Fire()가 호출되므로 Super::OnTurnStart() 대신 개별 구현함.
-
     if (bIsDead) return;
 
+    // 로직을 DecideAction으로 일원화
+    DecideAction();
+}
+
+void AEnemyTanKStationaryA::DecideAction()
+{
     if (IsInAttackRange())
     {
         CurrentChargeTurns++;
 
-        if (IsChargedTurn())
+        if (CurrentChargeTurns >= MaxChargeTurns)
         {
-            UE_LOG(LogTemp, Warning, TEXT("[%s] 포격 준비 완료 - 포격 실행!"), *GetName());
+            UE_LOG(LogTemp, Warning, TEXT("[%s] 충전 완료! 사격합니다."), *GetName());
             Aim();
             Fire();
             CurrentChargeTurns = 0;
+
+            FTimerHandle ActionDelayHandle;
+            GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
         }
         else
         {
-            UE_LOG(LogTemp, Warning, TEXT("[%s] 포격 준비 중... (%d/%d)"),
-                *GetName(), CurrentChargeTurns, MaxChargeTurns);
+            UE_LOG(LogTemp, Warning, TEXT("[%s] 충전 중... (%d/%d)"), *GetName(), CurrentChargeTurns, MaxChargeTurns);
 
+            FTimerHandle ChargeDelayHandle;
+            GetWorldTimerManager().SetTimer(ChargeDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.0f, false);
         }
     }
-
-    OnTurnEnd();
+    else
+    {
+        OnTurnEnd();
+    }
 }
 
+// 사격 방식 구체화 (오버라이드)
 void AEnemyTanKStationaryA::Fire()
 {
     if (!ProjectileClass || !FirePoint) return;
@@ -62,10 +73,11 @@ void AEnemyTanKStationaryA::Fire()
     {
         FVector LaunchDirection = SpawnRotation.Vector();
         Projectile->FireInDirection(LaunchDirection, FirePower, FVector::ZeroVector);
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 포탄 발사 성공!"), *GetName());
     }
 }
 
 bool AEnemyTanKStationaryA::IsChargedTurn()
 {
-    return CurrentChargeTurns >= MaxChargeTurns ? true : false;
+    return CurrentChargeTurns >= MaxChargeTurns;
 }

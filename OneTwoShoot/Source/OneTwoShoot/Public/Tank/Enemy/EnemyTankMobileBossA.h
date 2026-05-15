@@ -19,7 +19,6 @@ protected:
 
 private:
 
-    void Aim();
     void FireProjectile(FRotator SpawnRotation);
 
     void Pattern_SingleShot();
