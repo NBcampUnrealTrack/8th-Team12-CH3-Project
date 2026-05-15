@@ -1,7 +1,9 @@
 #include "../Public/Tank/BaseTank.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
+#include "Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 ABaseTank::ABaseTank()
 {
@@ -27,34 +29,66 @@ void ABaseTank::UpdateAimAngle(float PitchDelta, float YawDelta)
 
 void ABaseTank::FireCannon()
 {
-	if (CurrentPhase != ETankPhase::Action && CurrentPhase != ETankPhase::Aim) return;
-	
-	if (ProjectileClass && GetWorld())
+    if (!ProjectileClass) return;
+
+    FRotator CameraRot = GetControlRotation();
+    FVector ForwardDir = FRotator(0.f, CameraRot.Yaw, 0.f).Vector();
+    FVector RightDir = FRotator(0.f, CameraRot.Yaw + 90.f, 0.f).Vector();
+    FVector ShootDirection = ForwardDir.RotateAngleAxis(-CurrentPitch, RightDir);
+
+    FVector SpawnLocation = FVector::ZeroVector;
+    
+    TArray<UStaticMeshComponent*> MeshComps;
+    GetComponents<UStaticMeshComponent>(MeshComps);
+    
+    UStaticMeshComponent* BarrelComp = nullptr;
+	for (UStaticMeshComponent* CurrMesh : MeshComps)
 	{
-		FVector SpawnLocation = GetActorLocation() + FVector(0.0f, 0.0f, 100.0f);
-		FRotator ShootRotation = FRotator(CurrentPitch, CurrentYaw, 0.0f);
-		FVector ShootDirection = ShootRotation.Vector();
-		
-		float FinalPower = TankBasePower;
-		
-		FTransform SpawnTransform(ShootRotation, SpawnLocation);
-		ABaseProjectile* SpawnedProjectile = GetWorld()->SpawnActorDeferred<ABaseProjectile>(
-			ProjectileClass,
-			SpawnTransform,
-			this,
-			GetInstigator(),
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-			);
-		
-		if (SpawnedProjectile)
-		{
-			// 바람 데이터는 게임 모드에서 가져오도록 처리 필요 (현재 임시로 빈 벡터 전달)
-			
-			SpawnedProjectile->FireInDirection(ShootDirection, FinalPower, FVector::ZeroVector);
-			UGameplayStatics::FinishSpawningActor(SpawnedProjectile, SpawnTransform);
-		}
-		
-		// 발사 후 턴 종료 처리를 위해 게임 모드에 알리는 로직 추가 필요
+        if (CurrMesh->GetName() == TEXT("Barrel"))
+        {
+            BarrelComp = CurrMesh;
+            break;
+        }
+    }
+
+    if (BarrelComp && BarrelComp->DoesSocketExist(TEXT("Muzzle")))
+    {
+        SpawnLocation = BarrelComp->GetSocketLocation(TEXT("Muzzle"));
+    }
+    else
+    {
+        SpawnLocation = GetActorLocation() + (ShootDirection * 150.f) + FVector(0, 0, 100.f);
+    }
+
+    SpawnLocation += (ShootDirection * 10.f); 
+
+    DrawDebugDirectionalArrow(GetWorld(), SpawnLocation, SpawnLocation + (ShootDirection * 100.f), 30.f, FColor::Cyan, false, 5.f);
+
+    FTransform SpawnTransform(ShootDirection.Rotation(), SpawnLocation);
+    ABaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ABaseProjectile>(
+       ProjectileClass, SpawnTransform, this, GetInstigator(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+
+    if (Projectile)
+    {
+        this->MoveIgnoreActorAdd(Projectile);
+        Projectile->SetActorEnableCollision(false);
+        
+        SetTankPhase(ETankPhase::Wait);
+        Projectile->OnExplosionHit.AddDynamic(this, &ABaseTank::OnProjectileExploded);
+
+        Projectile->FireInDirection(ShootDirection, TankBasePower, FVector::ZeroVector);
+        UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
+        
+        Projectile->SetActorEnableCollision(true);
+    }
+}
+
+/// ----- 포탄이 터지면 게임모드에 턴 종료를 알림
+void ABaseTank::OnProjectileExploded(FVector HitLocation, float Radius)
+{
+	if (ATurnGameMode* GameMode = GetWorld()->GetAuthGameMode<ATurnGameMode>())
+	{
+		GameMode->EndCurrentTurn();
 	}
 }
 
