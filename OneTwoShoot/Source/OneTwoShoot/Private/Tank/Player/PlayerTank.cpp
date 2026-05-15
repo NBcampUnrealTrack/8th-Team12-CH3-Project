@@ -34,7 +34,7 @@ void APlayerTank::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	CurrentPhase = ETankPhase::Move;
+	CurrentPhase = ETankPhase::Aim;
 	bIsDroneView = false;
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
@@ -43,6 +43,7 @@ void APlayerTank::BeginPlay()
 		{
 			Subsystem->AddMappingContext(MovingMappingContext, 0);
 			Subsystem->AddMappingContext(LookMappingContext, 0); 
+			Subsystem->AddMappingContext(CombatMappingContext, 0); 
 		}
 	}
 }
@@ -58,27 +59,29 @@ void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Look);
 		EnhancedInputComponent->BindAction(ToggleCameraAction, ETriggerEvent::Started, this, &APlayerTank::ToggleCameraView);
 		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Zoom);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerTank::Input_Fire);
 	}
 }
 
 /// ----- 이동 가능 상태인지 확인
 bool APlayerTank::CanMove() const
 {
-	return (CurrentPhase == ETankPhase::Move);
+	// return (CurrentPhase == ETankPhase::Move); ----- 임시로 Aim상태에서도 이동 가능하게 변경
+	return (CurrentPhase == ETankPhase::Move || CurrentPhase == ETankPhase::Aim);
 }
 
 /// ----- 현재 속도 계산
 float APlayerTank::CalculateActiveSpeed() const
 {
 	/// ----- 추후 버프, 디버프 로직 추가하면 됨
-	return TankBasePower; 
+	return MoveSpeed; 
 }
 
 /// ----- 현재 회전 속도 계산
 float APlayerTank::CalculateActiveRotationSpeed() const
 {
 	/// ----- 혹시 회전 속도도 버프, 디버프에 따라 영향을 줄지 몰라 미리 만들어둠
-	return TankBasePower; 
+	return MoveSpeed;
 }
 
 /// ----- 탱크를 움직이는 로직
@@ -203,5 +206,14 @@ void APlayerTank::Input_Zoom(const FInputActionValue& Value)
 	{
 		float NewLength = SpringArm->TargetArmLength + (ZoomValue * ZoomSpeed * -1.0f);
 		SpringArm->TargetArmLength = FMath::Clamp(NewLength, MinZoomLength, MaxZoomLength);
+	}
+}
+
+void APlayerTank::Input_Fire()
+{
+	if (CurrentPhase == ETankPhase::Aim || CurrentPhase == ETankPhase::Action)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Fire!"));
+		FireCannon();
 	}
 }

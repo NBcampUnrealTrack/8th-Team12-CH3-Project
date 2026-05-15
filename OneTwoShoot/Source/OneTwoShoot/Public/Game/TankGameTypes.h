@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataTable.h"
 #include "TankGameTypes.generated.h"
 
 class ABaseEnemyTank;
@@ -61,4 +62,19 @@ struct FWaveData
 	// 한 웨이브에 스폰할 적들의 정보 배열
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
 	TArray<FEnemySpawnInfo> EnemiesToSpawn;
+};
+
+USTRUCT(BlueprintType)
+struct FStageDataRow : public FTableRowBase // 반드시 상속받아야 함
+{
+	GENERATED_BODY()
+
+public:
+	// 스테이지 이름이나 번호 등을 넣을 수 있음
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage")
+	FString StageName;
+
+	// 이 스테이지에 포함될 웨이브들의 배열 (우리가 설정한 3개 웨이브 등)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage")
+	TArray<FWaveData> Waves;
 };
