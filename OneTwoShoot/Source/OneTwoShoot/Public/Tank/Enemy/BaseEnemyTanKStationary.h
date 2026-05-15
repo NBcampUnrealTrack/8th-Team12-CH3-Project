@@ -17,13 +17,11 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    // 현재 포신 각도
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-    float CurrentAimAngle;
-
-    virtual void Aim();
+    virtual void OnTurnStart() override;
+    virtual void DecideAction();
     virtual void Fire();
 
-    virtual void OnTurnStart() override; // override 키워드 추가
+    virtual void Landed(const FHitResult& Hit) override;
+
 };
 

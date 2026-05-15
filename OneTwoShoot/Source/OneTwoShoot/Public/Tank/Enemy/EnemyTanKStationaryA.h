@@ -13,8 +13,9 @@ public:
     AEnemyTanKStationaryA();
 
 protected:
-    virtual void OnTurnStart() override;
-    virtual void Fire() override;
+    void OnTurnStart() override;
+    void Fire() override;
+    void DecideAction() override;
 
     bool IsChargedTurn();
 

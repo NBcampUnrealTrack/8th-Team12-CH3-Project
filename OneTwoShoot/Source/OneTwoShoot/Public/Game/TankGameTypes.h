@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "TankGameTypes.generated.h"
 
+class ABaseEnemyTank;
+
 UENUM(BlueprintType)
 enum class ETankPhase : uint8
 {
@@ -35,4 +37,28 @@ enum class ETankUnitType : uint8
 	None,
 	Player,
 	Enemy
+};
+
+USTRUCT(BlueprintType)
+struct FEnemySpawnInfo
+{
+	GENERATED_BODY()
+
+	// 스폰할 적 탱크 클래스 (블루프린트 클래스 선택 가능)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	TSubclassOf<ABaseEnemyTank> EnemyClass;
+
+	// 복쉘 월드 기준 스폰 격자 좌표 (X, Y)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	FIntPoint SpawnVoxelXY;
+};
+
+USTRUCT(BlueprintType)
+struct FWaveData
+{
+	GENERATED_BODY()
+
+	// 한 웨이브에 스폰할 적들의 정보 배열
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Wave")
+	TArray<FEnemySpawnInfo> EnemiesToSpawn;
 };

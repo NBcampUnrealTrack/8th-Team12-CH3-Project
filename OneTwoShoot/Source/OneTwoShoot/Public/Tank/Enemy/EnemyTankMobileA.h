@@ -24,14 +24,9 @@ protected:
     USceneComponent* FirePoint;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
-    float CurrentAimAngle; 
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
     float LaunchPower;
 
-    virtual void DecideAction() override;
+    void DecideAction();
 
-    void Aim();
-
-    void Fire();
+    void Fire() override;
 };

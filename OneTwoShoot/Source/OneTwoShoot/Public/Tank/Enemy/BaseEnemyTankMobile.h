@@ -38,4 +38,6 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "Voxel")
     TObjectPtr<class AVoxelWorld> VWorld;
+
+    virtual void Fire();
 };
