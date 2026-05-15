@@ -86,14 +86,20 @@ void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
 
         bIsMoving = false;
         Path.Empty();
-        DecideAction();
+
+        // 이동 애니메이션 시간을 고려해 다시 판단
+        FTimerHandle MoveDelayHandle;
+        GetWorldTimerManager().SetTimer(MoveDelayHandle, this, &ABaseEnemyTankMobile::DecideAction, 1.0f, false);
         return;
     }
 
     if (Path.Num() == 0)
     {
         bIsMoving = false;
-        DecideAction();
+
+        // 이동 애니메이션 시간을 고려해 다시 판단
+        FTimerHandle MoveDelayHandle;
+        GetWorldTimerManager().SetTimer(MoveDelayHandle, this, &ABaseEnemyTankMobile::DecideAction, 1.0f, false);
         return;
     }
 
@@ -151,13 +157,34 @@ void ABaseEnemyTankMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFol
 
 void ABaseEnemyTankMobile::DecideAction()
 {
-    // 하위 클래스에서 구현
-    // ex) 자폭형 → 근접 여부 확인 후 폭발
-    //     이동형 포격 → Aim() → Fire()
+    if (bIsDead) return;
+
+    if (IsInAttackRange())
+    {
+        Aim();
+        Fire();
+
+        FTimerHandle ActionDelayHandle;
+        GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTankMobile::OnTurnEnd, 1.5f, false);
+    }
+    else if (TurnActionCount > 0)
+    {
+        MoveOnVoxelGrid();
+        --TurnActionCount;
+    }
+    else
+    {
+        OnTurnEnd();
+    }
 }
 
 AVoxelWorld* ABaseEnemyTankMobile::GetVoxelWorld()
 {
     AActor* FoundActor = UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass());
     return Cast<AVoxelWorld>(FoundActor);
+}
+
+void ABaseEnemyTankMobile::Fire()
+{
+
 }

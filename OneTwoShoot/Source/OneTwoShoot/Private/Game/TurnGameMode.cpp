@@ -18,15 +18,18 @@ void ATurnGameMode::BeginPlay()
 
 void ATurnGameMode::StartWave()
 {
+	// 이미 웨이브가 진행 중이면 중복 실행 방지
+	if (bIsWaveRunning) return;
+
 	UE_LOG(LogTemp, Warning, TEXT("웨이브가 시작됐습니다."));
 	
 	CurrentTurnState = ETurnState::Wait;
 
 	// 인게임 용, 플레이어 턴이 먼저 와야해서, 마지막 행동 유닛이 적이여야함.
-	//LastActiveUnit = EUnitType::Enemy;
+	LastActiveUnit = ETankUnitType::Enemy;
 
 	// 테스트 용, 플레이어가 만들어지지 않아서 바로 EnemyAI 턴으로 전환하기 위함
-	LastActiveUnit = ETankUnitType::Player;
+	//LastActiveUnit = ETankUnitType::Player;
 
 	PlayerTurnCount = 0;
 	
@@ -43,12 +46,14 @@ void ATurnGameMode::EndCurrentTurn()
 
 void ATurnGameMode::DetermineNextTurn()
 {
+	// 1. 방금 플레이어의 행동이 끝났을 경우 -> 적의 차례로 전환
 	if (LastActiveUnit == ETankUnitType::Player)
 	{
-		PlayerTurnCount++;
-		
+		PlayerTurnCount++; // 플레이어가 행동을 마쳤으므로 카운트 증가
+
 		bool bGivePlayerBonusTurn = false;
-		
+
+		// 장전 속도에 따른 보너스 턴 체크 (데이터 추적 유지)
 		switch (CurrentPlayerReloadSpeed)
 		{
 		case EReloadSpeed::Fast:
@@ -60,39 +65,49 @@ void ATurnGameMode::DetermineNextTurn()
 		default:
 			break;
 		}
-		
+
 		if (bGivePlayerBonusTurn)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("보너스 차례를 획득합니다. 플레이어가 연속 행동합니다."));
+			UE_LOG(LogTemp, Warning, TEXT("보너스 차례 획득! 플레이어가 연속 행동합니다. (자동 스킵 가동)"));
 			CurrentTurnState = ETurnState::PlayerTurn;
-			LastActiveUnit = ETankUnitType::None;
+			LastActiveUnit = ETankUnitType::Player; // 연속 행동을 위해 다시 Player로 설정
+
+			// 플레이어 로직 미완성이므로 자동 종료 타이머 가동
+			FTimerHandle SkipTimer;
+			GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 			return;
 		}
-		
+
+		// 일반적인 경우 적군 턴 시작
 		CurrentTurnState = ETurnState::EnemyTurn;
 		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
-	} 
+	}
+	// 2. 방금 적군의 행동이 끝났을 경우 -> 플레이어의 차례로 전환
 	else
 	{
+		// 장전 속도가 느릴 경우 패널티 체크 (플레이어 차례 무효화)
 		if (CurrentPlayerReloadSpeed == EReloadSpeed::Slow && (PlayerTurnCount + 1) % 5 == 0)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("장전 속도가 느려 패널티로 이번 차례가 무효화됩니다."));
+			UE_LOG(LogTemp, Warning, TEXT("장전 패널티: 이번 플레이어 차례는 무효화됩니다."));
 			PlayerTurnCount++;
-			
+
 			CurrentTurnState = ETurnState::EnemyTurn;
 			LastActiveUnit = ETankUnitType::Enemy;
-			
 			StartEnemyGroupTurn();
 			return;
 		}
-		
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 차례 시작"));
+
+		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (2초 후 자동 스킵) ===="));
 		CurrentTurnState = ETurnState::PlayerTurn;
 		LastActiveUnit = ETankUnitType::Player;
+
+		// ★ 플레이어 조작 대신 턴을 자동으로 넘겨주는 타이머
+		// 나중에 플레이어 조작이 완성되면 이 타이머를 실제 입력 이벤트로 교체하면 됩니다.
+		FTimerHandle SkipTimer;
+		GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 	}
 }
-
 void ATurnGameMode::StartEnemyGroupTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("적 차례 시작"));
@@ -125,10 +140,10 @@ void ATurnGameMode::StartEnemyGroupTurn()
 
 void ATurnGameMode::ContinueEnemyGroupTurn()
 {
-	// 리스트 범위를 벗어났는지 체크 (모든 적 행동 완료)
+	// 모든 적이 행동을 완료했는지 체크
 	if (CurrentEnemyIndex >= AliveEnemies.Num())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("모든 적의 행동이 완료되었습니다."));
+		UE_LOG(LogTemp, Warning, TEXT("모든 적의 행동 완료. 플레이어 턴으로 전환합니다."));
 		EndCurrentTurn();
 		return;
 	}
@@ -140,15 +155,13 @@ void ATurnGameMode::ContinueEnemyGroupTurn()
 		UE_LOG(LogTemp, Warning, TEXT("[%d/%d] %s 행동 시작"),
 			CurrentEnemyIndex + 1, AliveEnemies.Num(), *CurrentEnemy->GetName());
 
-		// 다음 적을 가리키도록 인덱스 미리 증가
+		// 인덱스를 먼저 올리고 행동을 시작합니다.
 		CurrentEnemyIndex++;
-
-		// 2. 적 AI의 턴 시작 함수 호출
 		CurrentEnemy->OnTurnStart();
 	}
 	else
 	{
-		// 유효하지 않거나 죽은 적이면 다음 인덱스로 건너뜀
+		// 유효하지 않은 적이면 즉시 다음으로
 		CurrentEnemyIndex++;
 		ContinueEnemyGroupTurn();
 	}

@@ -50,6 +50,9 @@ void ABaseEnemyTankMobileBoss::DecideAction()
         UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 추적 이동 - 남은 턴 카운트: %d"), *GetName(), TurnActionCount);
         MoveOnVoxelGrid();
         --TurnActionCount;
+
+        FTimerHandle ActionDelayHandle;
+        GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
     }
     else
     {

@@ -42,6 +42,8 @@ protected:
 	
 	int32 CurrentEnemyIndex;
 	
+	bool bIsWaveRunning = false;
+
 	void DetermineNextTurn();
 	void StartEnemyGroupTurn();
 };
