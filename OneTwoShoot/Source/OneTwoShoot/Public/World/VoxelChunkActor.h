@@ -22,6 +22,12 @@ public:
 	// Sets default values for this actor's properties
 	AVoxelChunkActor();
 
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Voxel|Actions")
+	void RebuildChunk();
+
+	UFUNCTION(BlueprintCallable, Category = "Voxel|Render")
+	void SetRenderSettings(EVoxelRenderMode NewRenderMode, float NewSurfaceLevel, int32 NewSteppedInterpolationSteps);
+
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Debug")
 	void DestroyVoxelsAtWorldLocation(FVector WorldLocation, float Radius);
 
@@ -31,8 +37,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
 	bool RemoveVoxel(FIntVector LocalCoords, bool bRebuildMesh = true);
 
+	UFUNCTION(BlueprintCallable, Category = "Voxel|Edit")
+	bool SetVoxelDensity(FIntVector LocalCoords, float NewDensity, bool bRebuildMesh = true);
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel|Edit")
 	EVoxelBlockType GetLocalVoxelType(FIntVector LocalCoords) const;
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Voxel|Edit")
+	FVoxelData GetLocalVoxelData(FIntVector LocalCoords) const;
 
 	void SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld);
 
@@ -71,12 +83,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Voxel")
 	int32 ChunkSize = 16;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
+	EVoxelRenderMode RenderMode = EVoxelRenderMode::Blocky;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
+	float SurfaceLevel = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render", meta = (ClampMin = "2", ClampMax = "16"))
+	int32 SteppedInterpolationSteps = 4;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	UFUNCTION(CallInEditor, Category = "Voxel") // Editor-Details-Voxel. Rebuild the Mesh for the chunk.
-	void RebuildChunk();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel")
 	int32 ChunkSizeX = 16;
@@ -92,35 +110,42 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Material")
 	UMaterialInterface* VoxelMaterial;
 
-	UPROPERTY()
-	TArray<EVoxelBlockType> Voxels;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Data")
+	TArray<FVoxelData> Voxels;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Data")
+	TArray<FVoxelData> MarchingVoxels;
+
+private:
+
+	FChunkMeshData MeshData;
+
+	UPROPERTY()
+	TWeakObjectPtr<AVoxelWorld> OwningVoxelWorld;
 
 	void InitializeVoxels();
+	void InitializeMarchingVoxels();
 	void EnsureVoxelDataInitialized();
 	bool HasValidVoxelData() const;
+	bool HasValidMarchingVoxelData() const;
 	void UpdateChunkVoxelOffsetFromLocation();
 
 	int32 GetVoxelIndex(int32 X, int32 Y, int32 Z) const;
+	int32 GetMarchingVoxelIndex(int32 X, int32 Y, int32 Z) const;
 
 	bool IsCoordinateValid(int32 X, int32 Y, int32 Z) const;
+	bool IsMarchingCoordinateValid(int32 X, int32 Y, int32 Z) const;
 
 	bool IsVoxelSolid(int32 X, int32 Y, int32 Z) const;
 
 	void GenerateMesh();
+	void GenerateBlockyMesh();
+	void GenerateMarchingMesh();
 
-private:
-	
-	FChunkMeshData MeshData;
-	
-	UPROPERTY()
-	TWeakObjectPtr<AVoxelWorld> OwningVoxelWorld;
+	FVoxelData GetMarchingSample(int32 X, int32 Y, int32 Z) const;
+	void SetMarchingSample(FIntVector LocalCoords, const FVoxelData& VoxelData);
 
-	void AddCube(int32 X, int32 Y, int32 Z);
-	void AddFace(EVoxelDirection Direction, const FVector& Base);
-	FIntVector GetDirectionOffset(EVoxelDirection Direction) const;
-	FVector GetDirectionNormal(EVoxelDirection Direction) const;
-	TArray<FVector> GetFaceVertices(EVoxelDirection Direction, const FVector& Base) const;
+	FVoxelData MakeVoxelData(EVoxelBlockType BlockType) const;
 };
 
 
