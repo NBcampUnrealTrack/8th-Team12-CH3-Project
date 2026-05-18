@@ -1,5 +1,6 @@
 ﻿#include "../Public/Game/TurnGameMode.h"
 #include "../Public/Tank/Enemy/BaseEnemyTank.h"
+#include "../Public/Tank/Player/PlayerTank.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -22,7 +23,9 @@ void ATurnGameMode::StartWave()
 	if (bIsWaveRunning) return;
 
 	UE_LOG(LogTemp, Warning, TEXT("웨이브가 시작됐습니다."));
-	
+
+	bIsWaveRunning = true;
+
 	CurrentTurnState = ETurnState::Wait;
 
 	// 인게임 용, 플레이어 턴이 먼저 와야해서, 마지막 행동 유닛이 적이여야함.
@@ -46,7 +49,11 @@ void ATurnGameMode::EndCurrentTurn()
 
 void ATurnGameMode::DetermineNextTurn()
 {
-	// 1. 방금 플레이어의 행동이 끝났을 경우 -> 적의 차례로 전환
+	if (!bIsWaveRunning) return;
+
+	// 적의 차례로 전환
+
+	// 적의 차례로 전환
 	if (LastActiveUnit == ETankUnitType::Player)
 	{
 		PlayerTurnCount++; // 플레이어가 행동을 마쳤으므로 카운트 증가
@@ -83,7 +90,7 @@ void ATurnGameMode::DetermineNextTurn()
 		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
 	}
-	// 2. 방금 적군의 행동이 끝났을 경우 -> 플레이어의 차례로 전환
+	// 플레이어의 차례로 전환
 	else
 	{
 		// 장전 속도가 느릴 경우 패널티 체크 (플레이어 차례 무효화)
@@ -98,21 +105,27 @@ void ATurnGameMode::DetermineNextTurn()
 			return;
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (2초 후 자동 스킵) ===="));
+		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (입력 대기) ===="));
 		CurrentTurnState = ETurnState::PlayerTurn;
 		LastActiveUnit = ETankUnitType::Player;
 
-		// ★ 플레이어 조작 대신 턴을 자동으로 넘겨주는 타이머
-		// 나중에 플레이어 조작이 완성되면 이 타이머를 실제 입력 이벤트로 교체하면 됩니다.
-		FTimerHandle SkipTimer;
-		GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
+		ABaseTank* PlayerTank = Cast<ABaseTank>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
+		if (PlayerTank)
+		{
+			PlayerTank->OnTurnStart();
+		}
+
+		// 플레이어 조작 대신 턴을 자동으로 넘겨주는 타이머
+		// 플레이어 조작 구현 완료로 해당 줄은 주석 처리.
+		//FTimerHandle SkipTimer;
+		//GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 	}
 }
 void ATurnGameMode::StartEnemyGroupTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("적 차례 시작"));
 	
-	// 1. 월드 내 모든 적 AI를 찾아 AliveEnemies 리스트에 담기
+	// 월드 내 모든 적 AI를 찾아 AliveEnemies 리스트에 담기
 	TArray<AActor*> FoundEnemies;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseEnemyTank::StaticClass(), FoundEnemies);
 
@@ -165,4 +178,12 @@ void ATurnGameMode::ContinueEnemyGroupTurn()
 		CurrentEnemyIndex++;
 		ContinueEnemyGroupTurn();
 	}
+}
+
+void ATurnGameMode::EndWave()
+{
+	bIsWaveRunning = false;
+	CurrentTurnState = ETurnState::Wait;
+	LastActiveUnit = ETankUnitType::None;
+	UE_LOG(LogTemp, Warning, TEXT("턴 시스템이 다음 웨이브를 위해 대기 상태로 전환됩니다."));
 }
