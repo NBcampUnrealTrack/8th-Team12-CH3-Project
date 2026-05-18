@@ -5,8 +5,6 @@
 #include "../Public/Game/TankGameTypes.h" 
 #include "BaseTank.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, CurrentHealth, float, MaxHealth);
-
 class ABaseProjectile;
 
 UCLASS(Abstract)
@@ -23,12 +21,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	virtual void FireCannon();
 	
-	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetCurrentHealth() const { return CurrentHealth; }
-	
-	UFUNCTION(BlueprintPure, Category = "Health")
-	float GetMaxHealth() const { return MaxHealth; }
-	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -36,9 +28,6 @@ public:
 	
 	UFUNCTION()
 	void OnProjectileExploded(FVector HitLocation, float Radius);
-	
-	UPROPERTY(BlueprintAssignable, Category = "Event")
-	FOnHealthChangedSignature OnHealthChanged;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
