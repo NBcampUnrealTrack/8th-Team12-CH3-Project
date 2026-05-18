@@ -72,11 +72,6 @@ void AStageWaveManager::OnEnemyDestroyed()
         UE_LOG(LogTemp, Warning, TEXT("웨이브 %d 섬멸 완료!"), CurrentWaveIndex + 1);
         CurrentWaveIndex++;
 
-        if (ATurnGameMode* GM = Cast<ATurnGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
-        {
-            GM->EndWave();
-        }
-
         // 잠시 후 다음 웨이브 시작
         FTimerHandle NextWaveTimer;
         GetWorldTimerManager().SetTimer(NextWaveTimer, this, &AStageWaveManager::StartNextWave, 3.0f, false);

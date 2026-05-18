@@ -97,7 +97,7 @@ void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 			TArray<AActor*>(),
 			this,
 			GetInstigatorController(),
-			ECC_MAX
+			ECC_Visibility
 			);
 		
 		if (OnExplosionHit.IsBound())

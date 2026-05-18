@@ -21,9 +21,6 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "Turn System")
 	void ContinueEnemyGroupTurn();
-
-	UFUNCTION()
-	void EndWave();
 	
 protected:
 	virtual void BeginPlay() override;

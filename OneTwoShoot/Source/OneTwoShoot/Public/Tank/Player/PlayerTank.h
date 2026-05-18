@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "../Public/Tank/BaseTank.h"
@@ -80,6 +80,4 @@ protected:
 	void Input_Zoom(const struct FInputActionValue& Value);
 	void Input_Fire();
 	virtual void BeginPlay() override;
-	virtual void OnTurnStart() override;
-	virtual void OnTurnEnd() override;
 };

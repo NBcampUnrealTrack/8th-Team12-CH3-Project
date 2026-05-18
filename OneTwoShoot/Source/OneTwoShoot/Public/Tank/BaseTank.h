@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -28,12 +28,6 @@ public:
 	
 	UFUNCTION()
 	void OnProjectileExploded(FVector HitLocation, float Radius);
-
-	UFUNCTION()
-	virtual void OnTurnStart();
-
-	UFUNCTION()
-	virtual void OnTurnEnd();
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")

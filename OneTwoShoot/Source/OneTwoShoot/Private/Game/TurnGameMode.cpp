@@ -2,7 +2,6 @@
 #include "../Public/Tank/Enemy/BaseEnemyTank.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
-#include "../Public/Tank/Player/PlayerTank.h"
 
 ATurnGameMode::ATurnGameMode()
 {
@@ -24,8 +23,6 @@ void ATurnGameMode::StartWave()
 
 	UE_LOG(LogTemp, Warning, TEXT("웨이브가 시작됐습니다."));
 	
-	bIsWaveRunning = true;
-
 	CurrentTurnState = ETurnState::Wait;
 
 	// 인게임 용, 플레이어 턴이 먼저 와야해서, 마지막 행동 유닛이 적이여야함.
@@ -49,9 +46,7 @@ void ATurnGameMode::EndCurrentTurn()
 
 void ATurnGameMode::DetermineNextTurn()
 {
-	if (!bIsWaveRunning) return;
-
-	// 적의 차례로 전환
+	// 1. 방금 플레이어의 행동이 끝났을 경우 -> 적의 차례로 전환
 	if (LastActiveUnit == ETankUnitType::Player)
 	{
 		PlayerTurnCount++; // 플레이어가 행동을 마쳤으므로 카운트 증가
@@ -78,9 +73,9 @@ void ATurnGameMode::DetermineNextTurn()
 			LastActiveUnit = ETankUnitType::Player; // 연속 행동을 위해 다시 Player로 설정
 
 			// 플레이어 로직 미완성이므로 자동 종료 타이머 가동
-			//FTimerHandle SkipTimer;
-			//GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
-			//return;
+			FTimerHandle SkipTimer;
+			GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
+			return;
 		}
 
 		// 일반적인 경우 적군 턴 시작
@@ -88,7 +83,7 @@ void ATurnGameMode::DetermineNextTurn()
 		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
 	}
-	// 플레이어의 차례로 전환
+	// 2. 방금 적군의 행동이 끝났을 경우 -> 플레이어의 차례로 전환
 	else
 	{
 		// 장전 속도가 느릴 경우 패널티 체크 (플레이어 차례 무효화)
@@ -103,15 +98,14 @@ void ATurnGameMode::DetermineNextTurn()
 			return;
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (입력 대기) ===="));
+		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (2초 후 자동 스킵) ===="));
 		CurrentTurnState = ETurnState::PlayerTurn;
 		LastActiveUnit = ETankUnitType::Player;
 
-		ABaseTank* PlayerTank = Cast<ABaseTank>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
-		if (PlayerTank)
-		{
-			PlayerTank->OnTurnStart();
-		}
+		// ★ 플레이어 조작 대신 턴을 자동으로 넘겨주는 타이머
+		// 나중에 플레이어 조작이 완성되면 이 타이머를 실제 입력 이벤트로 교체하면 됩니다.
+		FTimerHandle SkipTimer;
+		GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 	}
 }
 void ATurnGameMode::StartEnemyGroupTurn()
@@ -171,12 +165,4 @@ void ATurnGameMode::ContinueEnemyGroupTurn()
 		CurrentEnemyIndex++;
 		ContinueEnemyGroupTurn();
 	}
-}
-
-void ATurnGameMode::EndWave()
-{
-	bIsWaveRunning = false;
-	CurrentTurnState = ETurnState::Wait;
-	LastActiveUnit = ETankUnitType::None;
-	UE_LOG(LogTemp, Warning, TEXT("턴 시스템이 다음 웨이브를 위해 대기 상태로 전환됩니다."));
 }

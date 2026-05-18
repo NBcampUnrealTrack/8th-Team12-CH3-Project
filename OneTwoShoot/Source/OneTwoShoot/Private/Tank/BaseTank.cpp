@@ -1,4 +1,4 @@
-﻿#include "../Public/Tank/BaseTank.h"
+#include "../Public/Tank/BaseTank.h"
 #include "../Public/Tank/BaseProjectile.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
 #include "Game/TurnGameMode.h"
@@ -28,7 +28,7 @@ void ABaseTank::UpdateAimAngle(float PitchDelta, float YawDelta)
 }
 
 void ABaseTank::FireCannon()
-{   
+{
     if (!ProjectileClass) return;
 
     FRotator CameraRot = GetControlRotation();
@@ -103,14 +103,4 @@ float ABaseTank::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 	}
 	
 	return ActualDamage;
-}
-
-void ABaseTank::OnTurnStart()
-{
-    SetTankPhase(ETankPhase::Aim);
-}
-
-void ABaseTank::OnTurnEnd()
-{
-    SetTankPhase(ETankPhase::Wait);
 }

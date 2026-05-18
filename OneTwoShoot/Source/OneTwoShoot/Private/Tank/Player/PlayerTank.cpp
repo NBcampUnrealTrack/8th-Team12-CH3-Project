@@ -1,4 +1,4 @@
-﻿#include "../Public/Tank/Player/PlayerTank.h"
+#include "../Public/Tank/Player/PlayerTank.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/BoxComponent.h"
@@ -34,19 +34,18 @@ void APlayerTank::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//CurrentPhase = ETankPhase::Aim;
-	SetTankPhase(ETankPhase::Wait);
+	CurrentPhase = ETankPhase::Aim;
 	bIsDroneView = false;
 
-	//if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
-	//{
-	//	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-	//	{
-	//		Subsystem->AddMappingContext(MovingMappingContext, 0);
-	//		Subsystem->AddMappingContext(LookMappingContext, 0); 
-	//		Subsystem->AddMappingContext(CombatMappingContext, 0); 
-	//	}
-	//}
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(MovingMappingContext, 0);
+			Subsystem->AddMappingContext(LookMappingContext, 0); 
+			Subsystem->AddMappingContext(CombatMappingContext, 0); 
+		}
+	}
 }
 
 void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -217,38 +216,4 @@ void APlayerTank::Input_Fire()
 		UE_LOG(LogTemp, Warning, TEXT("Fire!"));
 		FireCannon();
 	}
-}
-
-void APlayerTank::OnTurnStart()
-{
-	Super::OnTurnStart();
-
-	// 플레이어 차례가 되었으므로 조작 권한(Mapping Context)을 부여합니다.
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(MovingMappingContext, 0);
-			Subsystem->AddMappingContext(CombatMappingContext, 0);
-			Subsystem->AddMappingContext(LookMappingContext, 0);
-		}
-	}
-	UE_LOG(LogTemp, Warning, TEXT("플레이어 조작 권한이 활성화되었습니다."));
-}
-
-void APlayerTank::OnTurnEnd()
-{
-	Super::OnTurnEnd();
-
-	// 플레이어 차례가 끝났으므로 조작 권한을 완전히 회수합니다. (적 턴 내부 조작 방지)
-	if (APlayerController* PC = Cast<APlayerController>(GetController()))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
-		{
-			Subsystem->RemoveMappingContext(MovingMappingContext);
-			Subsystem->RemoveMappingContext(CombatMappingContext);
-			Subsystem->RemoveMappingContext(LookMappingContext);
-		}
-	}
-	UE_LOG(LogTemp, Warning, TEXT("플레이어 조작 권한이 비활성화되었습니다."));
 }
