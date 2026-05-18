@@ -4,6 +4,7 @@
 #include "Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "ModuleDescriptor.h"
 
 ABaseTank::ABaseTank()
 {
@@ -96,6 +97,11 @@ float ABaseTank::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
+	
+	if (OnHealthChanged.IsBound())
+	{
+		OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	}
 	
 	if (CurrentHealth <= 0.0f)
 	{
