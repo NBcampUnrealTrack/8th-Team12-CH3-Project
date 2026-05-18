@@ -2,6 +2,7 @@
 #include "../Public/World/VoxelWorld.h"
 #include "../Public/World/VoxelPathfinder.h"
 #include "../Public/Game/TurnGameMode.h"
+#include "../Public/Game/StageWaveManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
@@ -83,6 +84,12 @@ void ABaseEnemyTank::OnDeath()
 	bIsDead = true;
 
 	DropItem();
+
+	AActor* FoundManager = UGameplayStatics::GetActorOfClass(GetWorld(), AStageWaveManager::StaticClass());
+	if (AStageWaveManager* WaveManager = Cast<AStageWaveManager>(FoundManager))
+	{
+		WaveManager->OnEnemyDestroyed();
+	}
 
 	// 사망 애니메이션, 충돌 비활성화 등은 하위 클래스에서 추가
 
