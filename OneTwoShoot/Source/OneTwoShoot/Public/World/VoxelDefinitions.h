@@ -24,6 +24,17 @@ enum class EVoxelRenderMode : uint8
 	Marching
 };
 
+UENUM(BlueprintType)
+enum class EVoxelTerrainMaterialSection : uint8
+{
+	Grass,
+	Dirt,
+	Stone,
+	Steel,
+	Glass,
+	Count UMETA(Hidden)
+};
+
 USTRUCT(BlueprintType)
 struct FVoxelData
 {
@@ -79,3 +90,50 @@ struct FChunkMeshData
 		Tangents.Reserve(VertexCount);
 	}
 };
+
+FORCEINLINE int32 GetVoxelTerrainMaterialSectionCount()
+{
+	return static_cast<int32>(EVoxelTerrainMaterialSection::Count);
+}
+
+FORCEINLINE int32 GetVoxelTerrainMaterialSectionIndex(EVoxelBlockType BlockType, EVoxelDirection Direction)
+{
+	switch (BlockType)
+	{
+	case EVoxelBlockType::Grass:
+		return Direction == EVoxelDirection::Up
+			? static_cast<int32>(EVoxelTerrainMaterialSection::Grass)
+			: static_cast<int32>(EVoxelTerrainMaterialSection::Dirt);
+	case EVoxelBlockType::Dirt:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Dirt);
+	case EVoxelBlockType::Stone:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Stone);
+	case EVoxelBlockType::Steel:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Steel);
+	case EVoxelBlockType::Glass:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Glass);
+	default:
+		return INDEX_NONE;
+	}
+}
+
+FORCEINLINE int32 GetVoxelTerrainMaterialSectionIndex(EVoxelBlockType BlockType, const FVector& Normal)
+{
+	switch (BlockType)
+	{
+	case EVoxelBlockType::Grass:
+		return Normal.Z >= 0.55f
+			? static_cast<int32>(EVoxelTerrainMaterialSection::Grass)
+			: static_cast<int32>(EVoxelTerrainMaterialSection::Dirt);
+	case EVoxelBlockType::Dirt:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Dirt);
+	case EVoxelBlockType::Stone:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Stone);
+	case EVoxelBlockType::Steel:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Steel);
+	case EVoxelBlockType::Glass:
+		return static_cast<int32>(EVoxelTerrainMaterialSection::Glass);
+	default:
+		return INDEX_NONE;
+	}
+}

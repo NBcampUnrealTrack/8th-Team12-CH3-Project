@@ -101,8 +101,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Voxel")
 	UProceduralMeshComponent* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Data")
+	EVoxelBlockType DefaultBlockType;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Material")
-	UMaterialInterface* VoxelMaterial;
+	TArray<UMaterialInterface*> VoxelMaterials;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Material")
+	UMaterialInterface* FallbackVoxelMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Voxel|Data")
 	TArray<FVoxelData> Voxels;
@@ -112,7 +119,7 @@ protected:
 
 private:
 
-	FChunkMeshData MeshData;
+	TArray<FChunkMeshData> MeshSections;
 
 	UPROPERTY()
 	TWeakObjectPtr<AVoxelWorld> OwningVoxelWorld;
@@ -135,6 +142,7 @@ private:
 	void GenerateMesh();
 	void GenerateBlockyMesh();
 	void GenerateMarchingMesh();
+	void CreateMeshSections();
 
 	FVoxelData GetMarchingSample(int32 X, int32 Y, int32 Z) const;
 	void SetMarchingSample(FIntVector LocalCoords, const FVoxelData& VoxelData);

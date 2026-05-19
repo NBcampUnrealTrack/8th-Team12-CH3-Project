@@ -20,6 +20,9 @@ AVoxelChunkActor::AVoxelChunkActor()
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
 	Mesh->SetCanEverAffectNavigation(true);
+
+	VoxelMaterials.SetNum(GetVoxelTerrainMaterialSectionCount());
+	DefaultBlockType = EVoxelBlockType::Dirt;
 }
 
 void AVoxelChunkActor::SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld)
@@ -59,7 +62,7 @@ void AVoxelChunkActor::InitializeVoxels()
 
 	for (FVoxelData& Voxel : Voxels)
 	{
-		Voxel = MakeVoxelData(EVoxelBlockType::Dirt);
+		Voxel = MakeVoxelData(DefaultBlockType);
 	}
 }
 
@@ -73,7 +76,7 @@ void AVoxelChunkActor::InitializeMarchingVoxels()
 
 	for (FVoxelData& Voxel : MarchingVoxels)
 	{
-		Voxel = MakeVoxelData(EVoxelBlockType::Dirt);
+		Voxel = MakeVoxelData(DefaultBlockType);
 	}
 }
 
@@ -179,32 +182,29 @@ void AVoxelChunkActor::GenerateBlockyMesh()
 			VoxelSize,
 			[this](int32 X, int32 Y, int32 Z)
 			{
-				return IsVoxelSolid(X, Y, Z);
+				if (!IsCoordinateValid(X, Y, Z))
+				{
+					return FVoxelData();
+				}
+
+				const int32 VoxelIndex = GetVoxelIndex(X, Y, Z);
+				return Voxels.IsValidIndex(VoxelIndex) ? Voxels[VoxelIndex] : FVoxelData();
 			}
 		},
-		MeshData
+		MeshSections
 	);
 
-	Mesh->ClearAllMeshSections();
+	CreateMeshSections();
 
-	Mesh->CreateMeshSection_LinearColor(
-		0,
-		MeshData.Vertices,
-		MeshData.Triangles,
-		MeshData.Normals,
-		MeshData.UVs,
-		MeshData.VertexColors,
-		MeshData.Tangents,
-		true
-	);
-	if (VoxelMaterial)
+	int32 TotalVertices = 0;
+	int32 TotalTriangles = 0;
+	for (const FChunkMeshData& MeshData : MeshSections)
 	{
-		Mesh->SetMaterial(0, VoxelMaterial);
+		TotalVertices += MeshData.Vertices.Num();
+		TotalTriangles += MeshData.Triangles.Num() / 3;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Generated Mesh: Vertices=%d / Triangles=%d"), MeshData.Vertices.Num(), MeshData.Triangles.Num() / 3);
-	UE_LOG(LogTemp, Warning, TEXT("Material: %s"),
-		VoxelMaterial ? *VoxelMaterial->GetName() : TEXT("None"));
+	UE_LOG(LogTemp, Warning, TEXT("Generated Mesh: Sections=%d / Vertices=%d / Triangles=%d"), MeshSections.Num(), TotalVertices, TotalTriangles);
 }
 
 void AVoxelChunkActor::GenerateMarchingMesh()
@@ -220,27 +220,55 @@ void AVoxelChunkActor::GenerateMarchingMesh()
 				return GetMarchingSample(X, Y, Z);
 			}
 		},
-		MeshData
+		MeshSections
 	);
 
-	Mesh->ClearAllMeshSections();
+	CreateMeshSections();
 
-	Mesh->CreateMeshSection_LinearColor(
-		0,
-		MeshData.Vertices,
-		MeshData.Triangles,
-		MeshData.Normals,
-		MeshData.UVs,
-		MeshData.VertexColors,
-		MeshData.Tangents,
-		true
-	);
-	if (VoxelMaterial)
+	int32 TotalVertices = 0;
+	int32 TotalTriangles = 0;
+	for (const FChunkMeshData& MeshData : MeshSections)
 	{
-		Mesh->SetMaterial(0, VoxelMaterial);
+		TotalVertices += MeshData.Vertices.Num();
+		TotalTriangles += MeshData.Triangles.Num() / 3;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Generated Marching Mesh: Vertices=%d / Triangles=%d"), MeshData.Vertices.Num(), MeshData.Triangles.Num() / 3);
+	UE_LOG(LogTemp, Warning, TEXT("Generated Marching Mesh: Sections=%d / Vertices=%d / Triangles=%d"), MeshSections.Num(), TotalVertices, TotalTriangles);
+}
+
+void AVoxelChunkActor::CreateMeshSections()
+{
+	Mesh->ClearAllMeshSections();
+
+	for (int32 SectionIndex = 0; SectionIndex < MeshSections.Num(); SectionIndex++)
+	{
+		const FChunkMeshData& MeshData = MeshSections[SectionIndex];
+		if (MeshData.Vertices.Num() > 0)
+		{
+			Mesh->CreateMeshSection_LinearColor(
+				SectionIndex,
+				MeshData.Vertices,
+				MeshData.Triangles,
+				MeshData.Normals,
+				MeshData.UVs,
+				MeshData.VertexColors,
+				MeshData.Tangents,
+				true
+			);
+		}
+
+		UMaterialInterface* SectionMaterial = VoxelMaterials.IsValidIndex(SectionIndex)
+			? VoxelMaterials[SectionIndex]
+			: nullptr;
+		if (!SectionMaterial)
+		{
+			SectionMaterial = FallbackVoxelMaterial;
+		}
+		if (SectionMaterial)
+		{
+			Mesh->SetMaterial(SectionIndex, SectionMaterial);
+		}
+	}
 }
 
 void AVoxelChunkActor::RebuildChunk()

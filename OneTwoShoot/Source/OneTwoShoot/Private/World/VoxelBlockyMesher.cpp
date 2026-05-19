@@ -2,10 +2,14 @@
 
 #include "../Public/World/VoxelBlockyMesher.h"
 
-void FVoxelBlockyMesher::Generate(const FVoxelBlockyMesherSettings& Settings, FChunkMeshData& MeshData)
+void FVoxelBlockyMesher::Generate(const FVoxelBlockyMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections)
 {
-	MeshData.Reset();
-	MeshData.Reserve(50000, 75000);
+	MeshSections.SetNum(GetVoxelTerrainMaterialSectionCount());
+	for (FChunkMeshData& MeshData : MeshSections)
+	{
+		MeshData.Reset();
+		MeshData.Reserve(10000, 15000);
+	}
 
 	for (int32 Z = 0; Z < Settings.ChunkSizeZ; Z++)
 	{
@@ -13,16 +17,17 @@ void FVoxelBlockyMesher::Generate(const FVoxelBlockyMesherSettings& Settings, FC
 		{
 			for (int32 X = 0; X < Settings.ChunkSizeX; X++)
 			{
-				if (Settings.IsVoxelSolid(X, Y, Z))
+				const FVoxelData VoxelData = Settings.GetVoxelData(X, Y, Z);
+				if (VoxelData.BlockType != EVoxelBlockType::Air)
 				{
-					AddCube(Settings, MeshData, X, Y, Z);
+					AddCube(Settings, MeshSections, X, Y, Z, VoxelData.BlockType);
 				}
 			}
 		}
 	}
 }
 
-void FVoxelBlockyMesher::AddCube(const FVoxelBlockyMesherSettings& Settings, FChunkMeshData& MeshData, int32 X, int32 Y, int32 Z)
+void FVoxelBlockyMesher::AddCube(const FVoxelBlockyMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections, int32 X, int32 Y, int32 Z, EVoxelBlockType BlockType)
 {
 	const FVector Base = FVector(X, Y, Z) * Settings.VoxelSize;
 
@@ -37,15 +42,22 @@ void FVoxelBlockyMesher::AddCube(const FVoxelBlockyMesherSettings& Settings, FCh
 	{
 		const FIntVector Offset = GetDirectionOffset(Direction);
 
-		if (!Settings.IsVoxelSolid(X + Offset.X, Y + Offset.Y, Z + Offset.Z))
+		if (Settings.GetVoxelData(X + Offset.X, Y + Offset.Y, Z + Offset.Z).BlockType == EVoxelBlockType::Air)
 		{
-			AddFace(Settings, MeshData, Direction, Base);
+			AddFace(Settings, MeshSections, Direction, Base, BlockType);
 		}
 	}
 }
 
-void FVoxelBlockyMesher::AddFace(const FVoxelBlockyMesherSettings& Settings, FChunkMeshData& MeshData, EVoxelDirection Direction, const FVector& Base)
+void FVoxelBlockyMesher::AddFace(const FVoxelBlockyMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections, EVoxelDirection Direction, const FVector& Base, EVoxelBlockType BlockType)
 {
+	const int32 SectionIndex = GetVoxelTerrainMaterialSectionIndex(BlockType, Direction);
+	if (!MeshSections.IsValidIndex(SectionIndex))
+	{
+		return;
+	}
+
+	FChunkMeshData& MeshData = MeshSections[SectionIndex];
 	const int32 StartIndex = MeshData.Vertices.Num();
 	const TArray<FVector> FaceVertices = GetFaceVertices(Direction, Base, Settings.VoxelSize);
 	const FVector Normal = GetDirectionNormal(Direction);

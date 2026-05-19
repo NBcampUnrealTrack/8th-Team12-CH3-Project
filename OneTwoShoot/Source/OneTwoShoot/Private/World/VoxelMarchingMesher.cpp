@@ -3,10 +3,14 @@
 #include "../Public/World/VoxelMarchingMesher.h"
 #include "../Public/World/VoxelMarchingCubesTables.h"
 
-void FVoxelMarchingMesher::Generate(const FVoxelMarchingMesherSettings& Settings, FChunkMeshData& MeshData)
+void FVoxelMarchingMesher::Generate(const FVoxelMarchingMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections)
 {
-	MeshData.Reset();
-	MeshData.Reserve(50000, 75000);
+	MeshSections.SetNum(GetVoxelTerrainMaterialSectionCount());
+	for (FChunkMeshData& MeshData : MeshSections)
+	{
+		MeshData.Reset();
+		MeshData.Reserve(10000, 15000);
+	}
 
 	FVoxelData Cube[8];
 
@@ -25,13 +29,13 @@ void FVoxelMarchingMesher::Generate(const FVoxelMarchingMesherSettings& Settings
 					);
 				}
 
-				MarchCube(Settings, MeshData, X, Y, Z, Cube);
+				MarchCube(Settings, MeshSections, X, Y, Z, Cube);
 			}
 		}
 	}
 }
 
-void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Settings, FChunkMeshData& MeshData, int32 X, int32 Y, int32 Z, const FVoxelData Cube[8])
+void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections, int32 X, int32 Y, int32 Z, const FVoxelData Cube[8])
 {
 	int32 VertexMask = 0;
 	FVector EdgeVertex[12];
@@ -81,7 +85,7 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 		const int32 EdgeB = VoxelMarchingCubes::TriangleConnectionTable[VertexMask][TriangleIndex * 3 + 1];
 		const int32 EdgeC = VoxelMarchingCubes::TriangleConnectionTable[VertexMask][TriangleIndex * 3 + 2];
 
-		AddTriangle(MeshData, EdgeVertex[EdgeA], EdgeVertex[EdgeB], EdgeVertex[EdgeC], BlockType, TriangleOrder);
+		AddTriangle(MeshSections, EdgeVertex[EdgeA], EdgeVertex[EdgeB], EdgeVertex[EdgeC], BlockType, TriangleOrder);
 	}
 }
 
@@ -98,9 +102,8 @@ EVoxelBlockType FVoxelMarchingMesher::GetDominantBlockType(const FVoxelData Cube
 	return EVoxelBlockType::Dirt;
 }
 
-void FVoxelMarchingMesher::AddTriangle(FChunkMeshData& MeshData, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3])
+void FVoxelMarchingMesher::AddTriangle(TArray<FChunkMeshData>& MeshSections, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3])
 {
-	const int32 StartIndex = MeshData.Vertices.Num();
 	const FVector TriangleVertices[3] = { V1, V2, V3 };
 	FVector Normal = -FVector::CrossProduct(
 		TriangleVertices[TriangleOrder[1]] - TriangleVertices[TriangleOrder[0]],
@@ -110,7 +113,15 @@ void FVoxelMarchingMesher::AddTriangle(FChunkMeshData& MeshData, const FVector& 
 	{
 		Normal = FVector::UpVector;
 	}
-	const FLinearColor VertexColor = BlockType == EVoxelBlockType::Grass ? FLinearColor::Green : FLinearColor::White;
+
+	const int32 SectionIndex = GetVoxelTerrainMaterialSectionIndex(BlockType, Normal);
+	if (!MeshSections.IsValidIndex(SectionIndex))
+	{
+		return;
+	}
+
+	FChunkMeshData& MeshData = MeshSections[SectionIndex];
+	const int32 StartIndex = MeshData.Vertices.Num();
 
 	MeshData.Vertices.Append({ V1, V2, V3 });
 	MeshData.Triangles.Append({
@@ -125,9 +136,9 @@ void FVoxelMarchingMesher::AddTriangle(FChunkMeshData& MeshData, const FVector& 
 		FVector2D(0.f, 1.f)
 	});
 	MeshData.VertexColors.Append({
-		VertexColor,
-		VertexColor,
-		VertexColor
+		FLinearColor::White,
+		FLinearColor::White,
+		FLinearColor::White
 	});
 
 	const FVector TangentX = (TriangleVertices[TriangleOrder[1]] - TriangleVertices[TriangleOrder[0]]).GetSafeNormal();
