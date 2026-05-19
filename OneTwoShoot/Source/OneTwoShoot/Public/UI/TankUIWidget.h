@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Game/TankGameTypes.h"
 #include "TankUIWidget.generated.h"
 
 class ABaseTank;
@@ -16,6 +17,14 @@ public:
 	void BindToTank(ABaseTank* InTank);
 	
 protected:
+	virtual void NativeConstruct() override;
+	
+	UFUNCTION()
+	void OnGameTurnChanged(ETurnState NewTurnState);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+	void UpdateTurnDisplay(ETurnState NewTurnState);
+	
 	UFUNCTION()
 	void OnTankHealthChanged(float CurrentHealth, float MaxHealth);
 	
