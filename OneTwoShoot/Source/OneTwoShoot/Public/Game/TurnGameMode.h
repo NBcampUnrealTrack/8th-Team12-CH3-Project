@@ -5,6 +5,8 @@
 #include "../Public/Game/TankGameTypes.h"
 #include "TurnGameMode.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurnChangedSignature, ETurnState, NewTurnState);
+
 UCLASS()
 class ONETWOSHOOT_API ATurnGameMode : public AGameMode
 {
@@ -24,6 +26,12 @@ public:
 	
 	UFUNCTION()
 	void EndWave();
+	
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnTurnChangedSignature OnTurnChanged;
+	
+	UFUNCTION(BlueprintPure, Category = "Turn")
+	ETurnState GetCurrentTurnState() const { return CurrentTurnState; }
 
 protected:
 	virtual void BeginPlay() override;

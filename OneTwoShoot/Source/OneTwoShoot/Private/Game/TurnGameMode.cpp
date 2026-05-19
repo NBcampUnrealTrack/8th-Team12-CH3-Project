@@ -27,6 +27,8 @@ void ATurnGameMode::StartWave()
 	bIsWaveRunning = true;
 
 	CurrentTurnState = ETurnState::Wait;
+	
+	OnTurnChanged.Broadcast(CurrentTurnState);
 
 	// 인게임 용, 플레이어 턴이 먼저 와야해서, 마지막 행동 유닛이 적이여야함.
 	LastActiveUnit = ETankUnitType::Enemy;
@@ -42,6 +44,8 @@ void ATurnGameMode::StartWave()
 void ATurnGameMode::EndCurrentTurn()
 {
 	CurrentTurnState = ETurnState::Wait;
+	
+	OnTurnChanged.Broadcast(CurrentTurnState);
 	
 	FTimerHandle TurnDelayHandle;
 	GetWorldTimerManager().SetTimer(TurnDelayHandle, this, &ATurnGameMode::DetermineNextTurn, 2.0f, false);
@@ -77,6 +81,9 @@ void ATurnGameMode::DetermineNextTurn()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("보너스 차례 획득! 플레이어가 연속 행동합니다. (자동 스킵 가동)"));
 			CurrentTurnState = ETurnState::PlayerTurn;
+			
+			OnTurnChanged.Broadcast(CurrentTurnState);
+			
 			LastActiveUnit = ETankUnitType::Player; // 연속 행동을 위해 다시 Player로 설정
 
 			// 플레이어 로직 미완성이므로 자동 종료 타이머 가동
@@ -87,6 +94,9 @@ void ATurnGameMode::DetermineNextTurn()
 
 		// 일반적인 경우 적군 턴 시작
 		CurrentTurnState = ETurnState::EnemyTurn;
+		
+		OnTurnChanged.Broadcast(CurrentTurnState);
+		
 		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
 	}
@@ -100,6 +110,9 @@ void ATurnGameMode::DetermineNextTurn()
 			PlayerTurnCount++;
 
 			CurrentTurnState = ETurnState::EnemyTurn;
+			
+			OnTurnChanged.Broadcast(CurrentTurnState);
+			
 			LastActiveUnit = ETankUnitType::Enemy;
 			StartEnemyGroupTurn();
 			return;
@@ -107,6 +120,9 @@ void ATurnGameMode::DetermineNextTurn()
 
 		UE_LOG(LogTemp, Warning, TEXT("==== 플레이어 차례 시작 (입력 대기) ===="));
 		CurrentTurnState = ETurnState::PlayerTurn;
+		
+		OnTurnChanged.Broadcast(CurrentTurnState);
+		
 		LastActiveUnit = ETankUnitType::Player;
 
 		ABaseTank* PlayerTank = Cast<ABaseTank>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0));
