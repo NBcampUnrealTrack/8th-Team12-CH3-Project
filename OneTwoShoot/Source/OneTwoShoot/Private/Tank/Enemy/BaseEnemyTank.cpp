@@ -241,8 +241,8 @@ void ABaseEnemyTank::DecideAction()
 	else if (TurnActionCount > 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 사거리 밖. 타겟을 향해 주행(MoveOnVoxelGrid) 요청."));
-		MoveOnVoxelGrid();
 		--TurnActionCount;
+		MoveOnVoxelGrid();
 		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 행동력 차감 완료 (현재 남은 행동력: %d)"), TurnActionCount);
 	}
 	else

@@ -5,6 +5,8 @@
 #include "Engine/World.h"
 #include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Character.h" 
+#include "GameFramework/Actor.h"
 
 // 월드 매니저는 매 프레임 처리할 일이 없으므로 Tick을 꺼둔다.
 AVoxelWorld::AVoxelWorld()
@@ -244,6 +246,12 @@ bool AVoxelWorld::IsVoxelOccupied(FIntVector Coords, AActor* IgnoreActor)
 	FCollisionQueryParams Params;
 	if (IgnoreActor) Params.AddIgnoredActor(IgnoreActor);
 
+	ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	if (PlayerChar)
+	{
+		Params.AddIgnoredActor(PlayerChar);
+	}
+
 	TArray<FOverlapResult> Overlaps;
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(40.0f);
 
@@ -328,7 +336,7 @@ FIntVector AVoxelWorld::GetNearestWalkableVoxel(FVector WorldLocation)
 		while (GetVoxelTypeAt(Coords) != EVoxelBlockType::Air && Coords.Z < 100)
 		{
 			Coords.Z++;
-		}
+		}	
 	}
 	else
 	{
