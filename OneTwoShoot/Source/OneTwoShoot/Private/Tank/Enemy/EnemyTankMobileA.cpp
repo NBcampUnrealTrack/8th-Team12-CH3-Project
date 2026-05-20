@@ -16,12 +16,12 @@ void AEnemyTankMobileA::BeginPlay()
     Super::BeginPlay();
 }
 
-void AEnemyTankMobileA::DecideAction()
-{
-    Super::DecideAction();
-}
+//void AEnemyTankMobileA::DecideAction()
+//{
+//    Super::DecideAction();
+//}
 
-//void AEnemyTankMobileA::Aim()
+//void AEnemyTankMobileA::Aim() 
 //{
 //    if (!TargetPlayer) return;
 //

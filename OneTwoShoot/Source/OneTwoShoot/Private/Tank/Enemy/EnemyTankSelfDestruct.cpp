@@ -13,10 +13,10 @@ AEnemyTankSelfDestruct::AEnemyTankSelfDestruct()
     UE_LOG(LogTemp, Warning, TEXT("[%s] 자폭 탱크 생성 완료"), *GetName());
 }
 
-void AEnemyTankSelfDestruct::DecideAction()
-{
-    Super::DecideAction();
-}
+//void AEnemyTankSelfDestruct::DecideAction()
+//{
+//    Super::DecideAction();
+//}
 
 void AEnemyTankSelfDestruct::Fire()
 {

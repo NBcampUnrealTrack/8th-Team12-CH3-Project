@@ -26,7 +26,5 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
     float LaunchPower;
 
-    void DecideAction();
-
-    void Fire() override;
+    virtual void Fire() override;
 };

@@ -15,7 +15,7 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    virtual void ExecutePattern() override;
+    virtual void Fire() override;
 
 private:
 

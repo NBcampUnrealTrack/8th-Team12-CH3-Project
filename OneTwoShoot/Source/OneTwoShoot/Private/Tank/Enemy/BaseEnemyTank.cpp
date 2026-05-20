@@ -141,6 +141,7 @@ void ABaseEnemyTank::OnTurnStart()
 {
 	if (bIsDead) return;
 	UE_LOG(LogTemp, Warning, TEXT("[%s] OnTurnStart 호출됨"), *GetName());
+	DecideAction();
 	// 하위 클래스에서 오버라이드하여 각자 행동 구현
 }
 
@@ -219,4 +220,43 @@ void ABaseEnemyTank::Aim()
 
 	UE_LOG(LogTemp, Warning, TEXT("[%s] 조준 완료 - Yaw: %f, Pitch: %f"),
 		*GetName(), LookAt.Yaw, LookAt.Pitch);
+}
+
+void ABaseEnemyTank::DecideAction()
+{
+	if (bIsDead) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("========================================"));
+	UE_LOG(LogTemp, Warning, TEXT("[판단 뇌] %s 의 DecideAction 가동! (남은 행동력: %d)"), *GetName(), TurnActionCount);
+
+	if (IsInAttackRange())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 사거리 내 진입 확인. 조준 및 사격(Fire) 실시."));
+		Aim();
+		Fire();
+
+		FTimerHandle ActionDelayHandle;
+		GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
+	}
+	else if (TurnActionCount > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 사거리 밖. 타겟을 향해 주행(MoveOnVoxelGrid) 요청."));
+		MoveOnVoxelGrid();
+		--TurnActionCount;
+		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 행동력 차감 완료 (현재 남은 행동력: %d)"), TurnActionCount);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("  -> [결정] 행동력 모두 소진. 턴 종료(OnTurnEnd) 요청."));
+		OnTurnEnd();
+	}
+	UE_LOG(LogTemp, Warning, TEXT("========================================"));
+}
+
+void ABaseEnemyTank::MoveOnVoxelGrid()
+{
+}
+
+void ABaseEnemyTank::Fire()
+{
 }

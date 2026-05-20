@@ -15,11 +15,10 @@ void AEnemyTankMobileBossA::BeginPlay()
     Super::BeginPlay();
 }
 
-void AEnemyTankMobileBossA::ExecutePattern()
+void AEnemyTankMobileBossA::Fire()
 {
     if (!TargetPlayer)
     {
-        OnTurnEnd();
         return;
     }
 
@@ -42,9 +41,6 @@ void AEnemyTankMobileBossA::ExecutePattern()
         Pattern_SingleShot();
         break;
     }
-
-    FTimerHandle ActionDelayHandle1;
-    GetWorldTimerManager().SetTimer(ActionDelayHandle1, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
 }
 
 //void AEnemyTankMobileBossA::Aim()

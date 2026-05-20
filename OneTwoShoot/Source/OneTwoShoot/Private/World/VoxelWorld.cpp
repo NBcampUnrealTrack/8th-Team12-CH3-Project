@@ -276,7 +276,7 @@ EVoxelBlockType AVoxelWorld::GetVoxelTypeAt(FIntVector GlobalCoords)
 		}
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("좌표 %s 에 해당하는 청크를 찾을 수 없음!"), *GlobalCoords.ToString());
+	//UE_LOG(LogTemp, Error, TEXT("좌표 %s 에 해당하는 청크를 찾을 수 없음!"), *GlobalCoords.ToString());
 	return EVoxelBlockType::Air;
 }
 

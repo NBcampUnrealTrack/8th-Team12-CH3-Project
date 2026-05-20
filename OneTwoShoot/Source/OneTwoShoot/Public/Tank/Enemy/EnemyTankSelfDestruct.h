@@ -13,9 +13,7 @@ public:
     AEnemyTankSelfDestruct();
 
 protected:
-    // 상속받은 행동 결정 로직 오버라이드
-    void DecideAction() override;
-    void Fire() override;
+    virtual void Fire() override;
 
     // 자폭 실행 함수
     void Explode();
