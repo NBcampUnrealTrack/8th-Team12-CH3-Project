@@ -4,6 +4,7 @@
 #include "Game/TurnGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "ModuleDescriptor.h"
 
 ABaseTank::ABaseTank()
 {
@@ -16,71 +17,117 @@ void ABaseTank::SetTankPhase(ETankPhase NewPhase)
 	CurrentPhase = NewPhase;
 }
 
+void ABaseTank::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TArray<UStaticMeshComponent*> MeshComps;
+	GetComponents<UStaticMeshComponent>(MeshComps);
+	for (UStaticMeshComponent* CurrMesh : MeshComps)
+	{
+		if (CurrMesh)
+		{
+			if (CurrMesh->GetName() == TEXT("Turret"))
+			{
+				CachedTurretMesh = CurrMesh;
+			}
+			else if (CurrMesh->GetName() == TEXT("Barrel"))
+			{
+				CachedBarrelMesh = CurrMesh;
+			}
+		}
+	}
+	TArray<USceneComponent*> SceneComps;
+	GetComponents<USceneComponent>(SceneComps);
+	for (USceneComponent* CurrComp : SceneComps)
+	{
+		if (CurrComp && CurrComp->GetName() == TEXT("BarrelPivot"))
+		{
+			CachedBarrelPivotComp = CurrComp;
+			break;
+		}
+	}
+
+	CurrentYaw = DefaultTurretRotation.Yaw;
+	CurrentPitch = -DefaultBarrelRotation.Pitch;
+}
+
+void ABaseTank::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+    
+}
+
+/// ----- 탱크 회전 로직 마스터 본체
 void ABaseTank::UpdateAimAngle(float PitchDelta, float YawDelta)
 {
-	if (CurrentPhase == ETankPhase::Aim)
+	if (CurrentPhase != ETankPhase::Aim) return;
+
+	// 터렛 좌우 회전
+	if (CachedTurretMesh && !FMath::IsNearlyZero(YawDelta))
 	{
-		CurrentPitch = FMath::Clamp(CurrentPitch + PitchDelta, 0.0f, 90.0f);
-		CurrentYaw += YawDelta;
+		FRotator CurrRot = CachedTurretMesh->GetRelativeRotation();
+		CurrRot.Yaw += YawDelta;
+		CachedTurretMesh->SetRelativeRotation(CurrRot);
+	}
+
+	// 배럴 상하 회전
+	if (CachedBarrelPivotComp && !FMath::IsNearlyZero(PitchDelta))
+	{
+		FRotator CurrRot = CachedBarrelPivotComp->GetRelativeRotation();
 		
-		// 이후 포신 (메시 형태) 를 회전시키는 시각적 처리 추가
+		float TargetPitch = CurrRot.Pitch + PitchDelta;
+
+		TargetPitch = FMath::Clamp(TargetPitch, -35.0f, 50.0f);
+
+		CurrRot.Pitch = TargetPitch;
+		CachedBarrelPivotComp->SetRelativeRotation(CurrRot);
+		CurrentPitch = TargetPitch;
 	}
 }
 
 void ABaseTank::FireCannon()
 {
-    if (!ProjectileClass) return;
+	if (!ProjectileClass) return;
 
-    FRotator CameraRot = GetControlRotation();
-    FVector ForwardDir = FRotator(0.f, CameraRot.Yaw, 0.f).Vector();
-    FVector RightDir = FRotator(0.f, CameraRot.Yaw + 90.f, 0.f).Vector();
-    FVector ShootDirection = ForwardDir.RotateAngleAxis(-CurrentPitch, RightDir);
+	FVector SpawnLocation = FVector::ZeroVector;
+	FVector ShootDirection = FVector::ForwardVector;
 
-    FVector SpawnLocation = FVector::ZeroVector;
-    
-    TArray<UStaticMeshComponent*> MeshComps;
-    GetComponents<UStaticMeshComponent>(MeshComps);
-    
-    UStaticMeshComponent* BarrelComp = nullptr;
-	for (UStaticMeshComponent* CurrMesh : MeshComps)
+	if (CachedBarrelMesh && CachedBarrelMesh->DoesSocketExist(TEXT("Muzzle")))
 	{
-        if (CurrMesh->GetName() == TEXT("Barrel"))
-        {
-            BarrelComp = CurrMesh;
-            break;
-        }
-    }
+		SpawnLocation = CachedBarrelMesh->GetSocketLocation(TEXT("Muzzle"));
+		
+		FRotator MuzzleWorldRot = CachedBarrelMesh->GetSocketRotation(TEXT("Muzzle"));
+		ShootDirection = MuzzleWorldRot.Vector();
+	}
+	else
+	{
+		SpawnLocation = GetActorLocation() + (GetActorForwardVector() * 150.f) + FVector(0, 0, 100.f);
+		ShootDirection = GetActorForwardVector();
+	}
 
-    if (BarrelComp && BarrelComp->DoesSocketExist(TEXT("Muzzle")))
-    {
-        SpawnLocation = BarrelComp->GetSocketLocation(TEXT("Muzzle"));
-    }
-    else
-    {
-        SpawnLocation = GetActorLocation() + (ShootDirection * 150.f) + FVector(0, 0, 100.f);
-    }
+	SpawnLocation += (ShootDirection * 10.f); 
 
-    SpawnLocation += (ShootDirection * 10.f); 
+	// 디버그 화살표 그리기
+	DrawDebugDirectionalArrow(GetWorld(), SpawnLocation, SpawnLocation + (ShootDirection * 100.f), 30.f, FColor::Cyan, false, 5.f);
 
-    DrawDebugDirectionalArrow(GetWorld(), SpawnLocation, SpawnLocation + (ShootDirection * 100.f), 30.f, FColor::Cyan, false, 5.f);
+	FTransform SpawnTransform(ShootDirection.Rotation(), SpawnLocation);
+	ABaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ABaseProjectile>(
+		ProjectileClass, SpawnTransform, this, GetInstigator(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
 
-    FTransform SpawnTransform(ShootDirection.Rotation(), SpawnLocation);
-    ABaseProjectile* Projectile = GetWorld()->SpawnActorDeferred<ABaseProjectile>(
-       ProjectileClass, SpawnTransform, this, GetInstigator(), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Projectile)
+	{
+		this->MoveIgnoreActorAdd(Projectile);
+		Projectile->SetActorEnableCollision(false);
+		
+		SetTankPhase(ETankPhase::Wait);
+		Projectile->OnExplosionHit.AddDynamic(this, &ABaseTank::OnProjectileExploded);
 
-    if (Projectile)
-    {
-        this->MoveIgnoreActorAdd(Projectile);
-        Projectile->SetActorEnableCollision(false);
-        
-        SetTankPhase(ETankPhase::Wait);
-        Projectile->OnExplosionHit.AddDynamic(this, &ABaseTank::OnProjectileExploded);
-
-        Projectile->FireInDirection(ShootDirection, TankBasePower, FVector::ZeroVector);
-        UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
-        
-        Projectile->SetActorEnableCollision(true);
-    }
+		Projectile->FireInDirection(ShootDirection, TankBasePower, FVector::ZeroVector);
+		UGameplayStatics::FinishSpawningActor(Projectile, SpawnTransform);
+		
+		Projectile->SetActorEnableCollision(true);
+	}
 }
 
 /// ----- 포탄이 터지면 게임모드에 턴 종료를 알림
@@ -96,6 +143,11 @@ float ABaseTank::TakeDamage(float DamageAmount, struct FDamageEvent const& Damag
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	CurrentHealth = FMath::Clamp(CurrentHealth - ActualDamage, 0.0f, MaxHealth);
+	
+	if (OnHealthChanged.IsBound())
+	{
+		OnHealthChanged.Broadcast(CurrentHealth, MaxHealth);
+	}
 	
 	if (CurrentHealth <= 0.0f)
 	{

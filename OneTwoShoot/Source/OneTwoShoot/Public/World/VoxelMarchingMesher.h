@@ -17,10 +17,10 @@ struct FVoxelMarchingMesherSettings
 class ONETWOSHOOT_API FVoxelMarchingMesher
 {
 public:
-	static void Generate(const FVoxelMarchingMesherSettings& Settings, FChunkMeshData& MeshData);
+	static void Generate(const FVoxelMarchingMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections);
 
 private:
-	static void MarchCube(const FVoxelMarchingMesherSettings& Settings, FChunkMeshData& MeshData, int32 X, int32 Y, int32 Z, const FVoxelData Cube[8]);
+	static void MarchCube(const FVoxelMarchingMesherSettings& Settings, TArray<FChunkMeshData>& MeshSections, int32 X, int32 Y, int32 Z, const FVoxelData Cube[8]);
 	static EVoxelBlockType GetDominantBlockType(const FVoxelData Cube[8]);
-	static void AddTriangle(FChunkMeshData& MeshData, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3]);
+	static void AddTriangle(TArray<FChunkMeshData>& MeshSections, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3]);
 };
