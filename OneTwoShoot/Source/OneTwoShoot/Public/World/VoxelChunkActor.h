@@ -86,6 +86,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
 	EVoxelRenderMode RenderMode = EVoxelRenderMode::Blocky;
 
+	//랜덤 제너레이션용 Getter, Setter
+	int32 GetChunkSizeX() const { return ChunkSizeX; }
+	int32 GetChunkSizeY() const { return ChunkSizeY; }
+	int32 GetChunkSizeZ() const { return ChunkSizeZ; }
+	float GetVoxelSize() const { return VoxelSize; }
+	void SetVoxelSize(float NewVoxelSize);
+	void SetChunkDimensions(int32 NewSizeX, int32 NewSizeY, int32 NewSizeZ);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

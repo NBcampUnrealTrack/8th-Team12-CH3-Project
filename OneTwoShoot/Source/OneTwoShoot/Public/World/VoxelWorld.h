@@ -66,10 +66,43 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Render")
 	EVoxelRenderMode RenderMode = EVoxelRenderMode::Blocky;
 
-	// 현재 VoxelWorld의 렌더 설정을 모든 청크에 적용하고 메쉬를 다시 생성한다.
-	// 에디터에서 RenderMode를 바꾼 뒤 누르는 용도다.
+	// 현재 VoxelWorld의 렌더 설정을 모든 청크에 적용하고 메쉬를 다시 생성
+	// 에디터에서 RenderMode를 바꾼 뒤 누르는 용도
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Voxel|Actions")
 	void RebuildAllChunks();
+
+
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Voxel|Generation")
+	void Generate2DWorld();
+
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Voxel|Generation")
+	void ResetVoxelWorld();
+
+	//블루프린트에서 복셀청크 넣어야 함
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	TSubclassOf<AVoxelChunkActor> ChunkActorClass;
+
+	//랜덤시드
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	int32 Seed = 1337;
+
+	//랜덤시드 노이즈
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	float NoiseFrequency = 0.035f;
+
+	//청크 갯수 벡터 XYZ
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	FIntVector ChunkCounts = FIntVector(4, 4, 3);
+
+	//각 청크 사이즈
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	FIntVector GeneratedChunkSize = FIntVector(16, 16, 8);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	int32 MinHeight = -4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|Generation")
+	int32 MaxHeight = 8;
+
 
 	// 특정 복셀 좌표에 Pawn 계열 액터가 서 있는지 검사한다.
 	// 이동 경로 탐색에서 다른 탱크/캐릭터와 겹치는 칸을 피하기 위해 사용한다.
@@ -109,6 +142,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Voxel|World")
 	float VoxelSize = 100.0f;
 
+
+
 protected:
 	// 게임 시작 시 레벨에 배치된 청크들을 찾아 관리 목록을 초기화한다.
 	virtual void BeginPlay() override;
@@ -131,4 +166,5 @@ protected:
 
 	// 마지막 폭발 반경. 위치/시간과 함께 중복 폭발 요청 판정에 사용한다.
 	float LastExplosionRadius = 0.0f;
+
 };

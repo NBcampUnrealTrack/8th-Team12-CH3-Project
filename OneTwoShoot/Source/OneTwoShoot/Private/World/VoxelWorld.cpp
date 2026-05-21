@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h" 
 #include "GameFramework/Actor.h"
+#include "World/FastNoiseLite.h"
 
 // 월드 매니저는 매 프레임 처리할 일이 없으므로 Tick을 꺼둔다.
 AVoxelWorld::AVoxelWorld()
@@ -234,6 +235,170 @@ void AVoxelWorld::RebuildAllChunks()
 		Chunk->SetRenderSettings(RenderMode);
 		Chunk->RebuildChunk();
 	}
+}
+
+void AVoxelWorld::ResetVoxelWorld()
+{
+	if (!GetWorld())
+	{
+		return;
+	}
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AVoxelChunkActor::StaticClass(), FoundActors);
+
+	int32 RemovedChunkCount = 0;
+	for (AActor* Actor : FoundActors)
+	{
+		AVoxelChunkActor* Chunk = Cast<AVoxelChunkActor>(Actor);
+		if (!IsValid(Chunk))
+		{
+			continue;
+		}
+
+		UnregisterChunk(Chunk);
+		Chunk->Destroy();
+		RemovedChunkCount++;
+	}
+
+	Chunks.Empty();
+
+	UE_LOG(LogTemp, Warning, TEXT("ResetVoxelWorld finished. Removed %d chunks."), RemovedChunkCount);
+}
+
+void AVoxelWorld::Generate2DWorld()
+{
+	if (!GetWorld() || !ChunkActorClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Generate2DWorld failed: ChunkActorClass is not set."));
+		return;
+	}
+
+	ResetVoxelWorld();
+
+	const FIntVector SafeChunkCounts(
+		FMath::Max(1, ChunkCounts.X),
+		FMath::Max(1, ChunkCounts.Y),
+		FMath::Max(1, ChunkCounts.Z)
+	);
+
+	const FIntVector SafeChunkSize(
+		FMath::Max(1, GeneratedChunkSize.X),
+		FMath::Max(1, GeneratedChunkSize.Y),
+		FMath::Max(1, GeneratedChunkSize.Z)
+	);
+
+	const int32 TotalVoxelCountX = SafeChunkCounts.X * SafeChunkSize.X;
+	const int32 TotalVoxelCountY = SafeChunkCounts.Y * SafeChunkSize.Y;
+
+	// 전체 맵의 중심을 (0,0)에 맞춘다.
+	// 예: ChunkCountX=4면 X 복셀 범위는 -32 ~ 31.
+	const int32 StartVoxelX = -TotalVoxelCountX / 2;
+	const int32 StartVoxelY = -TotalVoxelCountY / 2;
+
+	// Z=0이 기준 표면이므로, 청크는 최소 높이 아래부터 최대 높이 위까지 필요하다.
+	const int32 StartChunkZ = -(SafeChunkCounts.Z / 2);
+	const int32 EndChunkZ = StartChunkZ + SafeChunkCounts.Z - 1;
+	// 맨 아래 청크의 Z 좌표
+	const int32 BottomZ = StartChunkZ * SafeChunkSize.Z;
+
+
+	FastNoiseLite Noise;
+	Noise.SetSeed(Seed);
+	Noise.SetFrequency(NoiseFrequency);
+	Noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+	Noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+
+	Chunks.Empty();
+
+	for (int32 ChunkX = 0; ChunkX < SafeChunkCounts.X; ++ChunkX)
+	{
+		for (int32 ChunkY = 0; ChunkY < SafeChunkCounts.Y; ++ChunkY)
+		{
+			for (int32 ChunkZ = StartChunkZ; ChunkZ <= EndChunkZ; ++ChunkZ)
+			{
+				const FIntVector ChunkVoxelOffset(
+					StartVoxelX + ChunkX * SafeChunkSize.X,
+					StartVoxelY + ChunkY * SafeChunkSize.Y,
+					ChunkZ * SafeChunkSize.Z
+				);
+
+				const FVector ChunkWorldLocation(
+					ChunkVoxelOffset.X * VoxelSize,
+					ChunkVoxelOffset.Y * VoxelSize,
+					ChunkVoxelOffset.Z * VoxelSize
+				);
+
+				AVoxelChunkActor* Chunk = GetWorld()->SpawnActor<AVoxelChunkActor>(
+					ChunkActorClass,
+					ChunkWorldLocation,
+					FRotator::ZeroRotator
+				);
+				if (!IsValid(Chunk))
+				{
+					continue;
+				}
+
+				Chunk->SetVoxelSize(VoxelSize);
+				Chunk->SetChunkDimensions(
+					SafeChunkSize.X,
+					SafeChunkSize.Y,
+					SafeChunkSize.Z
+				);
+
+				Chunk->ChunkVoxelOffset = ChunkVoxelOffset;
+				Chunk->SetRenderSettings(RenderMode);
+				RegisterChunk(Chunk);
+
+				for (int32 LocalZ = 0; LocalZ < SafeChunkSize.Z; ++LocalZ)
+				{
+					for (int32 LocalY = 0; LocalY < SafeChunkSize.Y; ++LocalY)
+					{
+						for (int32 LocalX = 0; LocalX < SafeChunkSize.X; ++LocalX)
+						{
+							const int32 GlobalX = ChunkVoxelOffset.X + LocalX;
+							const int32 GlobalY = ChunkVoxelOffset.Y + LocalY;
+							const int32 GlobalZ = ChunkVoxelOffset.Z + LocalZ;
+
+							const float NoiseValue = Noise.GetNoise(
+								static_cast<float>(GlobalX),
+								static_cast<float>(GlobalY)
+							);
+
+							const float Alpha = (NoiseValue + 1.0f) * 0.5f;
+							const int32 SurfaceHeight = FMath::RoundToInt(
+								FMath::Lerp(static_cast<float>(MinHeight), static_cast<float>(MaxHeight), Alpha)
+							);
+
+							EVoxelBlockType BlockType = EVoxelBlockType::Air;
+
+							if (GlobalZ <= SurfaceHeight)
+							{
+								if (GlobalZ <= BottomZ + 1)
+								{
+									BlockType = EVoxelBlockType::Stone;
+								}
+								else if (GlobalZ == SurfaceHeight)
+								{
+									BlockType = EVoxelBlockType::Grass;
+								}
+								else
+								{
+									BlockType = EVoxelBlockType::Dirt;
+								}
+							}
+
+							Chunk->SetVoxel(FIntVector(LocalX, LocalY, LocalZ), BlockType, false);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	RebuildAllChunks();
+
+	UE_LOG(LogTemp, Warning, TEXT("Generate2DWorld finished. Chunks=%d"), Chunks.Num());
 }
 
 // 복셀 좌표 중심 근처에 Pawn 오버랩이 있는지 검사한다.

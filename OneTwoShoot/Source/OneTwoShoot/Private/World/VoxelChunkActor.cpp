@@ -20,6 +20,8 @@ AVoxelChunkActor::AVoxelChunkActor()
 	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 	Mesh->SetCollisionResponseToAllChannels(ECR_Block);
 	Mesh->SetCanEverAffectNavigation(true);
+	Mesh->SetCastShadow(false);
+
 
 	VoxelMaterials.SetNum(GetVoxelTerrainMaterialSectionCount());
 	DefaultBlockType = EVoxelBlockType::Dirt;
@@ -28,6 +30,22 @@ AVoxelChunkActor::AVoxelChunkActor()
 void AVoxelChunkActor::SetOwningVoxelWorld(AVoxelWorld* InVoxelWorld)
 {
 	OwningVoxelWorld = InVoxelWorld;
+}
+
+void AVoxelChunkActor::SetVoxelSize(float NewVoxelSize)
+{
+	VoxelSize = FMath::Max(1.0f, NewVoxelSize);
+}
+
+void AVoxelChunkActor::SetChunkDimensions(int32 NewSizeX, int32 NewSizeY, int32 NewSizeZ)
+{
+	ChunkSizeX = FMath::Max(1, NewSizeX);
+	ChunkSizeY = FMath::Max(1, NewSizeY);
+	ChunkSizeZ = FMath::Max(1, NewSizeZ);
+
+	ChunkSize = ChunkSizeX; // 기존 코드 호환용. 나중엔 제거 후보.
+	Voxels.Empty();
+	MarchingVoxels.Empty();
 }
 
 void AVoxelChunkActor::BeginPlay()
