@@ -17,36 +17,29 @@ TArray<FIntVector> VoxelPathfinder::GetNeighbors(FIntVector Current)
         FIntVector(1, 0, 0),  // Forward
         FIntVector(-1, 0, 0), // Backward
         FIntVector(0, 1, 0),  // Right
-        FIntVector(0, -1, 0)  // Left
+        FIntVector(0, -1, 0),  // Left
+
+        FIntVector(1, 1, 0),  // Forward-Right
+        FIntVector(1, -1, 0), // Forward-Left
+        FIntVector(-1, 1, 0), // Backward-Right
+        FIntVector(-1, -1, 0) // 좌하단 (Backward-Left)
     };
 
-    // 수직 2방향 오프셋 (추후 개발을 위해 준비)
-    /* static const FIntVector VerticalOffsets[] = {
-        FIntVector(0, 0, 1),  // Up
-        FIntVector(0, 0, -1)  // Down
-    };
-    */
-
-    // 수평 이웃 추가
     for (const FIntVector& Offset : HorizontalOffsets)
     {
         Neighbors.Add(Current + Offset);
     }
-
-    // 수직 2방향 오프셋 (추후 개발을 위해 준비), VerticalOffsets를 추가하면 됨.
-    /*
-    for (const FIntVector& Offset : VerticalOffsets)
-    {
-        Neighbors.Add(Current + Offset);
-    }
-    */
 
     return Neighbors;
 }
 
 int32 VoxelPathfinder::GetManhattanDistance(FIntVector A, FIntVector B)
 {
-    return FMath::Abs(A.X - B.X) + FMath::Abs(A.Y - B.Y) + FMath::Abs(A.Z - B.Z);
+    int32 dX = FMath::Abs(A.X - B.X);
+    int32 dY = FMath::Abs(A.Y - B.Y);
+    int32 dZ = FMath::Abs(A.Z - B.Z);
+
+    return FMath::Max(dX, dY) + dZ;
 }
 
 TArray<FIntVector> VoxelPathfinder::FindPath(AVoxelWorld* World, FIntVector Start, FIntVector End, int32 MaxSearchRange, AActor* Requester)
@@ -55,11 +48,11 @@ TArray<FIntVector> VoxelPathfinder::FindPath(AVoxelWorld* World, FIntVector Star
 
     // 시작점/종착점 검사 시에도 Requester를 넘겨주어야 '나 자신'을 무시
     if (!World->IsWalkable(Start, Requester, End)) {
-        UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: 시작 위치가 Walkable이 아님! Coords: %s"), *Start.ToString());
+        UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: 시작 위치(%s)가 Walkable이 아님! (탱크가 땅에 파묻힘?)"), *Start.ToString());
         return FullPath;
     }
     if (!World->IsWalkable(End, Requester, End)) {
-        UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: 목적지 위치가 Walkable이 아님! Coords: %s"), *End.ToString());
+        UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: 목적지 위치(%s)가 Walkable이 아님! (플레이어가 허공/땅속에 있음?)"), *End.ToString());
         return FullPath;
     }
 
@@ -76,11 +69,11 @@ TArray<FIntVector> VoxelPathfinder::FindPath(AVoxelWorld* World, FIntVector Star
 
     OpenList.Add(Start);
     GScore.Add(Start, 0);
-    FScore.Add(Start, GetManhattanDistance(Start, End));
+    FScore.Add(Start, GetManhattanDistance(Start, End) * 10); // 정수 연산을 위해 가중치 배율 통일
     ParentMap.Add(Start, Start);
 
     int32 Iterations = 0;
-    const int32 SafetyLimit = 2000;
+    const int32 SafetyLimit = 5000;
 
     while (OpenList.Num() > 0 && Iterations < SafetyLimit)
     {
@@ -109,32 +102,56 @@ TArray<FIntVector> VoxelPathfinder::FindPath(AVoxelWorld* World, FIntVector Star
             }
             return FullPath;
         }
-
+        
         OpenList.Remove(Current);
         ClosedList.Add(Current);
 
-        for (const FIntVector& Neighbor : GetNeighbors(Current))
+        for (const FIntVector& NeighborNode : GetNeighbors(Current)) // GetNeighbors는 수평 4방향만 반환
         {
-            if (ClosedList.Contains(Neighbor) || !World->IsWalkable(Neighbor, Requester, End))
+            FIntVector Neighbor = NeighborNode;
+            FIntVector ActualNeighbor = Neighbor;
+
+            // 1. 평면(동일 Z) 이동이 가능한가?
+            if (World->IsWalkable(Neighbor, Requester, End))
+            {
+                ActualNeighbor = Neighbor;
+            }
+            // 2. 평면이 막혀있다면, 한 칸 오르막(Z + 1)은 가능한가?
+            else if (World->IsWalkable(Neighbor + FIntVector(0, 0, 1), Requester, End))
+            {
+                ActualNeighbor = Neighbor + FIntVector(0, 0, 1);
+            }
+            // 3. 평면이 허공이라면, 한 칸 내리막(Z - 1)은 가능한가?
+            else if (World->IsWalkable(Neighbor + FIntVector(0, 0, -1), Requester, End))
+            {
+                ActualNeighbor = Neighbor + FIntVector(0, 0, -1);
+            }
+            // 3가지 모두 불가능하면 진짜 벽(장애물)이므로 스킵
+            else
             {
                 continue;
             }
 
-            int32 TentativeGScore = GScore[Current] + 1;
+            if (ClosedList.Contains(ActualNeighbor)) continue;
 
-            if (!GScore.Contains(Neighbor) || TentativeGScore < GScore[Neighbor])
+            //직진은 10점, 대각선은 14점(1.4배)을 부여하여 정수 기반의 정밀한 최단 거리를 유도.
+            int32 TentativeGScore = (ActualNeighbor.X != Current.X && ActualNeighbor.Y != Current.Y) ? 14 : 10;
+
+            if (!GScore.Contains(ActualNeighbor) || TentativeGScore < GScore[ActualNeighbor])
             {
-                ParentMap.FindOrAdd(Neighbor) = Current;
-                GScore.FindOrAdd(Neighbor) = TentativeGScore;
-                FScore.FindOrAdd(Neighbor) = TentativeGScore + GetManhattanDistance(Neighbor, End);
+                ParentMap.FindOrAdd(ActualNeighbor) = Current;
+                GScore.FindOrAdd(ActualNeighbor) = TentativeGScore;
+                FScore.FindOrAdd(ActualNeighbor) = TentativeGScore + GetManhattanDistance(ActualNeighbor, End);
 
-                if (!OpenList.Contains(Neighbor))
+                if (!OpenList.Contains(ActualNeighbor))
                 {
-                    OpenList.Add(Neighbor);
+                    OpenList.Add(ActualNeighbor);
                 }
             }
         }
+
     }
 
+    UE_LOG(LogTemp, Error, TEXT("Pathfinding 실패: A* 루프가 끝났으나 타겟(%s)에 닿을 수 없음! (지형이 막혀있거나 단절됨)"), *End.ToString());
     return FullPath;
 }

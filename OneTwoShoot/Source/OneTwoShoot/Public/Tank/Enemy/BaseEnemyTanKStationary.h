@@ -18,10 +18,10 @@ protected:
     virtual void BeginPlay() override;
 
     virtual void OnTurnStart() override;
-    virtual void DecideAction();
-    virtual void Fire();
 
+    virtual void MoveOnVoxelGrid() override;
     virtual void Landed(const FHitResult& Hit) override;
 
+    virtual void Fire() override;
 };
 

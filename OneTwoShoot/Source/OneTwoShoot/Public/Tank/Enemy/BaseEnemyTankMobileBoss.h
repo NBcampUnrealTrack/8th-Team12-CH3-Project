@@ -32,13 +32,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Boss|UI")
     TSubclassOf<UUserWidget> WarningUIClass;
 
-    virtual void OnTurnStart() override;
     virtual void OnDamaged(int32 DamageAmount) override;
     virtual void OnDeath() override;
-    virtual void DecideAction() override;
 
     virtual void CheckPhaseTransition();
     virtual void OnPhaseChanged(int32 NewPhase);
-    virtual void ExecutePattern();
     virtual void ShowWarningUI(float Duration);
 };

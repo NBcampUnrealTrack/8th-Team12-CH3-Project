@@ -60,6 +60,10 @@ protected:
     float CurrentAimAngle;
 
     virtual void Aim();
+    virtual void DecideAction();
+    virtual void MoveOnVoxelGrid();
+    virtual void Fire();
+
 
 public:
 

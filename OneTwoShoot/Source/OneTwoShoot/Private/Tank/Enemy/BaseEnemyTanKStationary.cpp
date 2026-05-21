@@ -4,6 +4,8 @@
 ABaseEnemyTanKStationary::ABaseEnemyTanKStationary()
 {
     AttackRange = 2000.f;
+    MaxTurnActionCount = 1;
+    TurnActionCount = MaxTurnActionCount;
 }
 
 void ABaseEnemyTanKStationary::BeginPlay()
@@ -28,27 +30,15 @@ void ABaseEnemyTanKStationary::BeginPlay()
 // 턴 시작
 void ABaseEnemyTanKStationary::OnTurnStart()
 {
-    if (bIsDead) return;
+    Super::OnTurnStart();
 
-    DecideAction();
+    UE_LOG(LogTemp, Warning, TEXT("[%s] Stationary OnTurnStart 호출됨"), *GetName());
 }
 
-void ABaseEnemyTanKStationary::DecideAction()
+void ABaseEnemyTanKStationary::MoveOnVoxelGrid()
 {
-    if (IsInAttackRange())
-    {
-        Aim();
-        Fire();
-
-        // 행동 연출 시간을 위해 1.5초 지연 후 종료
-        FTimerHandle ActionDelayHandle;
-        GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
-    }
-    else
-    {
-        // 사거리 밖이면 즉시 종료 (고정형은 이동 안 함)
-        OnTurnEnd();
-    }
+    UE_LOG(LogTemp, Warning, TEXT("[%s] 고정형 요새는 이동 연산을 스킵하고 즉시 차례를 마칩니다."), *GetName());
+    OnTurnEnd();
 }
 
 void ABaseEnemyTanKStationary::Landed(const FHitResult& Hit)

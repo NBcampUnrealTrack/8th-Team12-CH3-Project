@@ -26,9 +26,8 @@ protected:
 
     TArray<FIntVector> CurrentRemainingPath;
 
-    virtual void MoveOnVoxelGrid();
+    virtual void MoveOnVoxelGrid() override;
     virtual void ExecuteVoxelMovement(TArray<FIntVector> Path);
-    virtual void DecideAction();
 
     virtual void OnTurnStart() override;
 

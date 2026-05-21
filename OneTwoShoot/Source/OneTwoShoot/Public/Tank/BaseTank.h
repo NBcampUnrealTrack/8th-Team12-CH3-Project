@@ -70,4 +70,19 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<ABaseProjectile> ProjectileClass;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UStaticMeshComponent* CachedTurretMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class USceneComponent* CachedBarrelPivotComp;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UStaticMeshComponent* CachedBarrelMesh;
+	
+	FRotator DefaultTurretRotation;
+	FRotator DefaultBarrelRotation;
+
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 };

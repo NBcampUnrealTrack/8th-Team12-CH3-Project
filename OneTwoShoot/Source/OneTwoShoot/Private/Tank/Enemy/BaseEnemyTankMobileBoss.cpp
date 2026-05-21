@@ -24,42 +24,43 @@ void ABaseEnemyTankMobileBoss::BeginPlay()
     UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 스폰"), *GetName());
 }
 
-void ABaseEnemyTankMobileBoss::OnTurnStart()
-{
-    if (bIsDead) return;
+//void ABaseEnemyTankMobileBoss::OnTurnStart()
+//{
+//    if (bIsDead) return;
+//
+//    UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 턴 시작 - 페이즈: %d"), *GetName(), CurrentPhase);
+//
+//    if (bIsExecutingPattern)
+//    {
+//        ExecutePattern();
+//        return;
+//    }
+//
+//    Super::OnTurnStart();
+//}
 
-    UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 턴 시작 - 페이즈: %d"), *GetName(), CurrentPhase);
+//void ABaseEnemyTankMobileBoss::DecideAction()
+//{
+//    if (IsInAttackRange())
+//    {
+//        ExecutePattern();
+//    }
+//    else if (TurnActionCount > 0)
+//    {
+//        UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 타겟 추격 주행 시작"), *GetName());
+//        MoveOnVoxelGrid();
+//        --TurnActionCount;
+//    }
+//    else
+//    {
+//        OnTurnEnd();
+//    }
+//}
 
-    if (bIsExecutingPattern)
-    {
-        ExecutePattern();
-        return;
-    }
-
-    Super::OnTurnStart();
-}
-
-void ABaseEnemyTankMobileBoss::DecideAction()
-{
-    if (IsInAttackRange())
-    {
-        ExecutePattern();
-    }
-    else if (TurnActionCount > 0)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 추적 이동 - 남은 턴 카운트: %d"), *GetName(), TurnActionCount);
-        MoveOnVoxelGrid();
-        --TurnActionCount;
-
-        FTimerHandle ActionDelayHandle;
-        GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTank::OnTurnEnd, 1.5f, false);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 보스 이동 횟수 소진 - 턴 종료"), *GetName());
-        OnTurnEnd();
-    }
-}
+//void ABaseEnemyTankMobileBoss::ExecutePattern()
+//{
+//    UE_LOG(LogTemp, Warning, TEXT("[%s] 기본 패턴 (자식 보스 클래스에서 구체화되어야 함)"), *GetName());
+//}
 
 void ABaseEnemyTankMobileBoss::OnDamaged(int32 DamageAmount)
 {
@@ -93,10 +94,10 @@ void ABaseEnemyTankMobileBoss::OnPhaseChanged(int32 NewPhase)
     // 하위 클래스에서 페이즈별 행동 추가
 }
 
-void ABaseEnemyTankMobileBoss::ExecutePattern()
-{
-    UE_LOG(LogTemp, Warning, TEXT("[%s] 기본 패턴 실행 (하위 클래스에서 구현 필요)"), *GetName());
-}
+//void ABaseEnemyTankMobileBoss::ExecutePattern()
+//{
+//    UE_LOG(LogTemp, Warning, TEXT("[%s] 기본 패턴 실행 (하위 클래스에서 구현 필요)"), *GetName());
+//}
 
 // UI 제작 후 연결.
 void ABaseEnemyTankMobileBoss::ShowWarningUI(float Duration)
