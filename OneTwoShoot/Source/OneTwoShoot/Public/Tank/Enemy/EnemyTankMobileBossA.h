@@ -17,6 +17,14 @@ protected:
 
     virtual void Fire() override;
 
+    virtual void Aim() override;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    USceneComponent* BarrelPivotComp;
+
+    UPROPERTY(EditAnywhere, Category = "Components")
+    USceneComponent* FirePivotComp;
+
 private:
 
     void FireProjectile(FRotator SpawnRotation);
@@ -28,8 +36,5 @@ private:
     TSubclassOf<class ABaseProjectile> ProjectileClass;
 
     UPROPERTY(EditAnywhere, Category = "Combat")
-    USceneComponent* FirePoint;
-
-    UPROPERTY(EditAnywhere, Category = "Combat")
-    float ShootPower;
+    float LaunchPower;
 };

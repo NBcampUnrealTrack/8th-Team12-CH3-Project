@@ -13,11 +13,6 @@ AEnemyTankSelfDestruct::AEnemyTankSelfDestruct()
     UE_LOG(LogTemp, Warning, TEXT("[%s] 자폭 탱크 생성 완료"), *GetName());
 }
 
-//void AEnemyTankSelfDestruct::DecideAction()
-//{
-//    Super::DecideAction();
-//}
-
 void AEnemyTankSelfDestruct::Fire()
 {
     Explode();
@@ -39,6 +34,7 @@ void AEnemyTankSelfDestruct::Explode()
         true
     );
 
+    OnDamaged(MaxHealth);
     UE_LOG(LogTemp, Error, TEXT("[%s] 자폭 완료!"), *GetName());
 
     OnTurnEnd();

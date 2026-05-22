@@ -5,8 +5,6 @@
 
 AEnemyTankMobileA::AEnemyTankMobileA()
 {
-    FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
-    FirePoint->SetupAttachment(RootComponent);
     AttackRange = 1500.f;
     LaunchPower = 4000.f;
 }
@@ -14,32 +12,63 @@ AEnemyTankMobileA::AEnemyTankMobileA()
 void AEnemyTankMobileA::BeginPlay()
 {
     Super::BeginPlay();
+
+    TArray<USceneComponent*> SceneComps;
+    GetComponents<USceneComponent>(SceneComps);
+
+    for (USceneComponent* CurrComp : SceneComps)
+    {   
+        if (CurrComp)
+        {
+            if (CurrComp->GetName() == TEXT("BarrelPivot"))
+            {
+                BarrelPivotComp = CurrComp;
+            }
+            else if (CurrComp->GetName() == TEXT("FirePoint"))
+            {
+                FirePivotComp = CurrComp;
+            }
+        }
+    }
 }
 
-//void AEnemyTankMobileA::DecideAction()
-//{
-//    Super::DecideAction();
-//}
+void AEnemyTankMobileA::Aim()
+{
+	Super::Aim();
 
-//void AEnemyTankMobileA::Aim() 
-//{
-//    if (!TargetPlayer) return;
-//
-//    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
-//    FRotator LookAt = Direction.Rotation();
-//    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-//    CurrentAimAngle = LookAt.Pitch;
-//
-//    UE_LOG(LogTemp, Warning, TEXT("[%s] 조준 완료 - Yaw: %f, Pitch: %f"),
-//        *GetName(), LookAt.Yaw, LookAt.Pitch);
-//}
+	if (BarrelPivotComp && FirePivotComp && TargetPlayer)
+	{
+		FVector TossVelocity;
+		bool bSuccess = UGameplayStatics::SuggestProjectileVelocity(
+			this,
+			TossVelocity,
+			FirePivotComp->GetComponentLocation(),
+			TargetPlayer->GetActorLocation(),
+            LaunchPower,
+			false, 0.f, 0.f,
+			ESuggestProjVelocityTraceOption::DoNotTrace
+		);
+
+		if (bSuccess)
+		{
+			FRotator PerfectAimRot = TossVelocity.Rotation();
+			FRotator BarrelRelRot = BarrelPivotComp->GetRelativeRotation();
+
+			float TargetPitch = PerfectAimRot.Pitch - GetActorRotation().Pitch;
+			TargetPitch = FMath::Clamp(TargetPitch, -35.0f, 50.0f);
+
+			BarrelRelRot.Pitch = TargetPitch;
+			BarrelPivotComp->SetRelativeRotation(BarrelRelRot);
+		}
+	}
+}
 
 void AEnemyTankMobileA::Fire()
 {
     if (!ProjectileClass) return;
-    if (!FirePoint) return;
+    if (!FirePivotComp) return;
 
-    FVector SpawnLocation = FirePoint->GetComponentLocation();
+    FVector SpawnLocation = FirePivotComp->GetComponentLocation();
     FRotator SpawnRotation = FRotator(CurrentAimAngle, GetActorRotation().Yaw, 0.f);
 
     FActorSpawnParameters SpawnParams;

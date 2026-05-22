@@ -128,6 +128,7 @@ void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
         MoveRequest.SetGoalLocation(TargetWorldPos);
         MoveRequest.SetAcceptanceRadius(35.0f); // 팅김 방지를 위해 수치 여유 확보
         MoveRequest.SetUsePathfinding(false);
+        MoveRequest.SetReachTestIncludesAgentRadius(false);
 
         FPathFollowingRequestResult RequestResult = AIC->MoveTo(MoveRequest);
 
@@ -161,29 +162,6 @@ void ABaseEnemyTankMobile::OnMoveComplete(FAIRequestID RequestID, const FPathFol
 
     DecideAction();
 }
-
-//void ABaseEnemyTankMobile::DecideAction()
-//{
-//    if (bIsDead) return;
-//
-//    if (IsInAttackRange())
-//    {
-//        Aim();
-//        Fire();
-//
-//        FTimerHandle ActionDelayHandle;
-//        GetWorldTimerManager().SetTimer(ActionDelayHandle, this, &ABaseEnemyTankMobile::OnTurnEnd, 1.5f, false);
-//    }
-//    else if (TurnActionCount > 0)
-//    {
-//        MoveOnVoxelGrid();
-//        --TurnActionCount;
-//    }
-//    else
-//    {
-//        OnTurnEnd();
-//    }
-//}
 
 AVoxelWorld* ABaseEnemyTankMobile::GetVoxelWorld()
 {

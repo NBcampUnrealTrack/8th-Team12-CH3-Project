@@ -45,8 +45,8 @@ void ABaseTank::BeginPlay()
 		{
 			CachedBarrelPivotComp = CurrComp;
 			break;
+			}
 		}
-	}
 
 	CurrentYaw = DefaultTurretRotation.Yaw;
 	CurrentPitch = -DefaultBarrelRotation.Pitch;

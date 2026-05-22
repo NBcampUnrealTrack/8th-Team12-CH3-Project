@@ -36,6 +36,25 @@ void ABaseProjectile::BeginPlay()
 	if (GetOwner())
 	{
 		CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
+
+		TArray<AActor*> SiblingProjectiles;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseProjectile::StaticClass(), SiblingProjectiles);
+
+		for (AActor* Sibling : SiblingProjectiles)
+		{
+			if (Sibling != this && Sibling->GetOwner() == this->GetOwner())
+			{
+				CollisionComponent->IgnoreActorWhenMoving(Sibling, true);
+
+				if (ABaseProjectile* SiblingProj = Cast<ABaseProjectile>(Sibling))
+				{
+					if (SiblingProj->CollisionComponent)
+					{
+						SiblingProj->CollisionComponent->IgnoreActorWhenMoving(this, true);
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -83,6 +102,19 @@ void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 		return;
 	}
 
+	if (ABaseProjectile* HitProjectile = Cast<ABaseProjectile>(OtherActor))
+	{
+		if (this->GetOwner() != nullptr && HitProjectile->GetOwner() == this->GetOwner())
+		{
+			return;
+		}
+
+		return;
+	}
+
+	TArray<AActor*> IgnoreActors;
+	IgnoreActors.Add(this);
+
 	float FinalRadius = BaseExplosionRadius + (ProjectileDamage * RadiusPerDamage);
 	
 		UGameplayStatics::ApplyRadialDamageWithFalloff(
@@ -94,7 +126,7 @@ void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 			FinalRadius,
 			1.0f, 
 			nullptr,
-			TArray<AActor*>(),
+			IgnoreActors,
 			this,
 			GetInstigatorController(),
 			ECC_MAX

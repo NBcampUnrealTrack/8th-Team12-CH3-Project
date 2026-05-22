@@ -20,11 +20,16 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
     TSubclassOf<AActor> ProjectileClass;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Combat")
-    USceneComponent* FirePoint;
-
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
     float LaunchPower;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
+    USceneComponent* FirePivotComp;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    class USceneComponent* BarrelPivotComp;
+
+    virtual void Aim() override;
 
     virtual void Fire() override;
 };

@@ -19,48 +19,33 @@ void ATurnGameMode::BeginPlay()
 
 void ATurnGameMode::StartWave()
 {
-	// 이미 웨이브가 진행 중이면 중복 실행 방지
-	if (bIsWaveRunning) return;
-
-	UE_LOG(LogTemp, Warning, TEXT("웨이브가 시작됐습니다."));
-
 	bIsWaveRunning = true;
 
 	CurrentTurnState = ETurnState::Wait;
-	
 	OnTurnChanged.Broadcast(CurrentTurnState);
 
-	// 인게임 용, 플레이어 턴이 먼저 와야해서, 마지막 행동 유닛이 적이여야함.
 	LastActiveUnit = ETankUnitType::Enemy;
-
-	// 테스트 용, 플레이어가 만들어지지 않아서 바로 EnemyAI 턴으로 전환하기 위함
-	//LastActiveUnit = ETankUnitType::Player;
-
 	PlayerTurnCount = 0;
-	
 	DetermineNextTurn();
 }
 
 void ATurnGameMode::EndCurrentTurn()
 {
 	CurrentTurnState = ETurnState::Wait;
-	
 	OnTurnChanged.Broadcast(CurrentTurnState);
-	
+
 	FTimerHandle TurnDelayHandle;
-	GetWorldTimerManager().SetTimer(TurnDelayHandle, this, &ATurnGameMode::DetermineNextTurn, 2.0f, false);
+	GetWorldTimerManager().SetTimer(
+		TurnDelayHandle, this, &ATurnGameMode::DetermineNextTurn, 2.0f, false);
 }
 
 void ATurnGameMode::DetermineNextTurn()
 {
 	if (!bIsWaveRunning) return;
 
-	// 적의 차례로 전환
-
-	// 적의 차례로 전환
 	if (LastActiveUnit == ETankUnitType::Player)
 	{
-		PlayerTurnCount++; // 플레이어가 행동을 마쳤으므로 카운트 증가
+		PlayerTurnCount++;
 
 		bool bGivePlayerBonusTurn = false;
 
@@ -84,15 +69,13 @@ void ATurnGameMode::DetermineNextTurn()
 			
 			OnTurnChanged.Broadcast(CurrentTurnState);
 			
-			LastActiveUnit = ETankUnitType::Player; // 연속 행동을 위해 다시 Player로 설정
+			LastActiveUnit = ETankUnitType::Player;
 
-			// 플레이어 로직 미완성이므로 자동 종료 타이머 가동
 			FTimerHandle SkipTimer;
 			GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 			return;
 		}
 
-		// 일반적인 경우 적군 턴 시작
 		CurrentTurnState = ETurnState::EnemyTurn;
 		
 		OnTurnChanged.Broadcast(CurrentTurnState);
@@ -100,7 +83,6 @@ void ATurnGameMode::DetermineNextTurn()
 		LastActiveUnit = ETankUnitType::Enemy;
 		StartEnemyGroupTurn();
 	}
-	// 플레이어의 차례로 전환
 	else
 	{
 		// 장전 속도가 느릴 경우 패널티 체크 (플레이어 차례 무효화)
@@ -130,18 +112,12 @@ void ATurnGameMode::DetermineNextTurn()
 		{
 			PlayerTank->OnTurnStart();
 		}
-
-		// 플레이어 조작 대신 턴을 자동으로 넘겨주는 타이머
-		// 플레이어 조작 구현 완료로 해당 줄은 주석 처리.
-		//FTimerHandle SkipTimer;
-		//GetWorldTimerManager().SetTimer(SkipTimer, this, &ATurnGameMode::EndCurrentTurn, 2.0f, false);
 	}
 }
 void ATurnGameMode::StartEnemyGroupTurn()
 {
 	UE_LOG(LogTemp, Warning, TEXT("적 차례 시작"));
 	
-	// 월드 내 모든 적 AI를 찾아 AliveEnemies 리스트에 담기
 	TArray<AActor*> FoundEnemies;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABaseEnemyTank::StaticClass(), FoundEnemies);
 
@@ -149,7 +125,7 @@ void ATurnGameMode::StartEnemyGroupTurn()
 	for (AActor* EnemyActor : FoundEnemies)
 	{
 		ABaseEnemyTank* Enemy = Cast<ABaseEnemyTank>(EnemyActor);
-		// 살아있는 적만 추가
+
 		if (Enemy && !Enemy->IsDead())
 		{
 			AliveEnemies.Add(Enemy);
@@ -158,11 +134,11 @@ void ATurnGameMode::StartEnemyGroupTurn()
 
 	if (AliveEnemies.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("살아있는 적이 없습니다. 턴을 종료합니다."));
+		UE_LOG(LogTemp, Warning, TEXT("살아있는 적이 없습니다. 플레이어 턴으로 전환합니다."));
 		EndCurrentTurn();
 		return;
 	}
-	
+
 	CurrentEnemyIndex = 0;
 	ContinueEnemyGroupTurn();
 }
@@ -201,5 +177,9 @@ void ATurnGameMode::EndWave()
 	bIsWaveRunning = false;
 	CurrentTurnState = ETurnState::Wait;
 	LastActiveUnit = ETankUnitType::None;
-	UE_LOG(LogTemp, Warning, TEXT("턴 시스템이 다음 웨이브를 위해 대기 상태로 전환됩니다."));
+
+	// 진행 중인 턴 타이머 정리
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+
+	UE_LOG(LogTemp, Warning, TEXT("전투 종료. 턴 시스템 대기 상태로 전환합니다."));
 }

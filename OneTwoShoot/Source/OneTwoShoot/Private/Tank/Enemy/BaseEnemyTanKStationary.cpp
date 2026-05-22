@@ -13,21 +13,6 @@ void ABaseEnemyTanKStationary::BeginPlay()
     Super::BeginPlay();
 }
 
-//// 플레이어 방향에 따른 회전
-//void ABaseEnemyTanKStationary::Aim()
-//{
-//    if (!TargetPlayer) return;
-//
-//    // 플레이어 방향 벡터 계산
-//    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
-//    FRotator LookAt = Direction.Rotation();
-//
-//    // Yaw(좌우)만 회전, Pitch(상하)는 포신에서 처리
-//    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-//    CurrentAimAngle = LookAt.Pitch;
-//}
-
-// 턴 시작
 void ABaseEnemyTanKStationary::OnTurnStart()
 {
     Super::OnTurnStart();
@@ -45,7 +30,6 @@ void ABaseEnemyTanKStationary::Landed(const FHitResult& Hit)
 {
     Super::Landed(Hit);
 
-    // 땅에 닿았으니 그때 이동을 완전히 비활성화합니다.
     if (GetCharacterMovement())
     {
         GetCharacterMovement()->DisableMovement();

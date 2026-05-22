@@ -1,18 +1,34 @@
 ﻿#include "../Public/Tank/Enemy/EnemyTankMobileBossA.h"
 #include "../Public/Tank/BaseProjectile.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 AEnemyTankMobileBossA::AEnemyTankMobileBossA()
 {
-    FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
-    FirePoint->SetupAttachment(RootComponent);
-
-    ShootPower = 4000.f;
+    LaunchPower = 4000.f;
 }
 
 void AEnemyTankMobileBossA::BeginPlay()
 {
     Super::BeginPlay();
+
+    TArray<USceneComponent*> SceneComps;
+    GetComponents<USceneComponent>(SceneComps);
+
+    for (USceneComponent* CurrComp : SceneComps)
+    {
+        if (CurrComp)
+        {
+            if (CurrComp->GetName() == TEXT("BarrelPivot"))
+            {
+                BarrelPivotComp = CurrComp;
+            }
+            else if (CurrComp->GetName() == TEXT("FirePoint"))
+            {
+                FirePivotComp = CurrComp;
+            }
+        }
+    }
 }
 
 void AEnemyTankMobileBossA::Fire()
@@ -32,10 +48,10 @@ void AEnemyTankMobileBossA::Fire()
         Pattern_SingleShot();
         break;
     case 1:
-        Pattern_SpreadShot(3, 15.f);
+        Pattern_SpreadShot(3, 5.f);
         break;
     case 2:
-        Pattern_SpreadShot(5, 20.f);
+        Pattern_SpreadShot(5, 5.f);
         break;
     default:
         Pattern_SingleShot();
@@ -43,12 +59,36 @@ void AEnemyTankMobileBossA::Fire()
     }
 }
 
-//void AEnemyTankMobileBossA::Aim()
-//{
-//    FVector Direction = TargetPlayer->GetActorLocation() - GetActorLocation();
-//    FRotator LookAt = Direction.Rotation();
-//    SetActorRotation(FRotator(0.f, LookAt.Yaw, 0.f));
-//}
+void AEnemyTankMobileBossA::Aim()
+{
+    Super::Aim();
+
+    if (BarrelPivotComp && FirePivotComp && TargetPlayer)
+    {
+        FVector TossVelocity;
+        bool bSuccess = UGameplayStatics::SuggestProjectileVelocity(
+            this,
+            TossVelocity,
+            FirePivotComp->GetComponentLocation(),
+            TargetPlayer->GetActorLocation(),
+            LaunchPower,
+            false, 0.f, 0.f,
+            ESuggestProjVelocityTraceOption::DoNotTrace
+        );
+
+        if (bSuccess)
+        {
+            FRotator PerfectAimRot = TossVelocity.Rotation();
+            FRotator BarrelRelRot = BarrelPivotComp->GetRelativeRotation();
+
+            float TargetPitch = PerfectAimRot.Pitch - GetActorRotation().Pitch;
+            TargetPitch = FMath::Clamp(TargetPitch, -35.0f, 50.0f);
+
+            BarrelRelRot.Pitch = TargetPitch;
+            BarrelPivotComp->SetRelativeRotation(BarrelRelRot);
+        }
+    }
+}
 
 void AEnemyTankMobileBossA::Pattern_SingleShot()
 {
@@ -73,15 +113,17 @@ void AEnemyTankMobileBossA::Pattern_SpreadShot(int32 ProjectileCount, float Spre
 
 void AEnemyTankMobileBossA::FireProjectile(FRotator SpawnRotation)
 {
-    if (!ProjectileClass || !FirePoint) return;
+    if (!ProjectileClass || !FirePivotComp) return;
 
     FActorSpawnParameters SpawnParams;
     SpawnParams.Owner = this;
-    SpawnParams.Instigator = GetInstigator();
+    SpawnParams.Instigator = this;
+
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
     ABaseProjectile* Projectile = GetWorld()->SpawnActor<ABaseProjectile>(
         ProjectileClass,
-        FirePoint->GetComponentLocation(),
+        FirePivotComp->GetComponentLocation(),
         SpawnRotation,
         SpawnParams
     );
@@ -89,6 +131,6 @@ void AEnemyTankMobileBossA::FireProjectile(FRotator SpawnRotation)
     if (Projectile)
     {
         FVector LaunchDirection = SpawnRotation.Vector();
-        Projectile->FireInDirection(LaunchDirection, ShootPower, FVector::ZeroVector);
+        Projectile->FireInDirection(LaunchDirection, LaunchPower, FVector::ZeroVector);
     }
 }

@@ -113,10 +113,7 @@ bool ABaseEnemyTank::IsInAttackRange()
 
 	float Distance = FVector::Dist2D(GetActorLocation(), TargetPlayer->GetActorLocation());
 
-	// 2D 비주얼 디버깅 (바닥에 원 그리기)
 	FVector Center = GetActorLocation();
-	// 캐릭터의 발바닥 위치로 높이 조정 (필요 시)
-	//Center.Z -= 45.f; 
 
 	DrawDebugCircle(
 		GetWorld(),
