@@ -4,6 +4,8 @@
 #include "../Public/Tank/BaseTank.h"
 #include "PlayerTank.generated.h"
 
+class ABaseTank;
+
 UCLASS()
 class ONETWOSHOOT_API APlayerTank : public ABaseTank
 {
@@ -33,6 +35,17 @@ protected:
 	class UInputAction* FireAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* AimAction;
+	/// ----- 아이템 사용을 위한 선언
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Item")
+	class UInputAction* UseItem1Action;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Item")
+	class UInputAction* UseItem2Action;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Item")
+	class UInputAction* UseItem3Action;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Item")
+	class UInputAction* UseItem4Action;
+	UPROPERTY()
+	class UInventoryManager* InventoryManager;
 	
 	/// ----- 탑뷰 카메라 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -75,6 +88,10 @@ protected:
 	void Input_Fire();
 	void Input_ToggleCamera();
 	void Input_Aim(const struct FInputActionValue& Value);
+	void Input_UseItem1();
+	void Input_UseItem2();
+	void Input_UseItem3();
+	void Input_UseItem4();
 	virtual void BeginPlay() override;
 	virtual void OnTurnStart() override;
 	virtual void OnTurnEnd() override;
