@@ -4,6 +4,7 @@
 #include "Game/OneTwoShootGameInstance.h"
 
 #include "Game/GameSave.h"
+#include "Item/InventoryManager.h"
 #include "Kismet/GameplayStatics.h"
 
 UOneTwoShootGameInstance::UOneTwoShootGameInstance()
@@ -18,6 +19,17 @@ void UOneTwoShootGameInstance::Init()
 	Super::Init();
 
 	LoadProgress();
+	
+	if (!InventoryManager)
+	{
+		InventoryManager = NewObject<UInventoryManager>(this);
+        
+		TArray<FInventoryItemSaveData> EmptyData; 
+		InventoryManager->Initialize(EmptyData);
+        
+		InventoryManager->AddItem(TEXT("HealItem"), 1);
+		InventoryManager->AssignToQuickSlot(0, TEXT("HealItem"));
+	}
 }
 
 void UOneTwoShootGameInstance::StartNewRun()

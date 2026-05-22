@@ -1,9 +1,12 @@
 ﻿#include "Tank/Player/PlayerTank.h"
 #include "Tank/Player/Drone.h"
+#include "Item/InventoryManager.h"
+#include "Game/OneTwoShootGameInstance.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
@@ -44,6 +47,11 @@ void APlayerTank::BeginPlay()
 	Super::BeginPlay();
 	SetTankPhase(ETankPhase::Wait);
 	bIsDroneView = false;
+	UOneTwoShootGameInstance* GI = Cast<UOneTwoShootGameInstance>(GetGameInstance());
+	if (GI)
+	{
+		InventoryManager = GI->InventoryManager;
+	}
 }
 
 void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -58,6 +66,10 @@ void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(ToggleCameraAction, ETriggerEvent::Started, this, &APlayerTank::Input_ToggleCamera);
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &APlayerTank::Input_Fire);
 		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Triggered, this, &APlayerTank::Input_Aim);
+		EnhancedInputComponent->BindAction(UseItem1Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem1);
+		EnhancedInputComponent->BindAction(UseItem2Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem2);
+		EnhancedInputComponent->BindAction(UseItem3Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem3);
+		EnhancedInputComponent->BindAction(UseItem4Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem4);
 	}
 }
 
@@ -113,19 +125,6 @@ void APlayerTank::Input_Look(const FInputActionValue& Value)
 	}
 }
 
-/// ----- 드론 뷰 <-> 탱크 뷰 전환 처리
-void APlayerTank::ToggleCameraView(APlayerController* InPC)
-{
-	if (!DroneClass) return;
-
-	APlayerController* PC = InPC ? InPC : Cast<APlayerController>(GetController());
-	if (!PC) return;
-
-	bIsDroneView = !bIsDroneView;
-
-	if (bIsDroneView) EnterDroneMode(PC);
-	else              ExitDroneMode(PC);
-}
 
 // 드론 모드 진입
 void APlayerTank::EnterDroneMode(APlayerController* PC)
@@ -167,6 +166,21 @@ void APlayerTank::ExitDroneMode(APlayerController* PC)
 	PC->SetControlRotation(SavedTankRotation);
 }
 
+/// ----- 드론 뷰 <-> 탱크 뷰 전환 처리
+void APlayerTank::ToggleCameraView(APlayerController* InPC)
+{
+	if (!DroneClass) return;
+	
+	if (!CanMove()) return;
+	APlayerController* PC = InPC ? InPC : Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	bIsDroneView = !bIsDroneView;
+
+	if (bIsDroneView) EnterDroneMode(PC);
+	else              ExitDroneMode(PC);
+}
+
 void APlayerTank::Input_ToggleCamera()
 {
 	ToggleCameraView();
@@ -194,6 +208,35 @@ void APlayerTank::Input_Aim(const FInputActionValue& Value)
 	float PitchDelta = AimVector.Y * AimSpeed * DeltaTime;
 
 	UpdateAimAngle(PitchDelta, YawDelta);
+}
+
+void APlayerTank::Input_UseItem1()
+{
+	if (InventoryManager)
+	{
+		InventoryManager->UseItemAtSlot(0, this);
+	}
+}
+void APlayerTank::Input_UseItem2()
+{
+	if (InventoryManager)
+	{
+		InventoryManager->UseItemAtSlot(1, this);
+	}
+}
+void APlayerTank::Input_UseItem3()
+{
+	if (InventoryManager)
+	{
+		InventoryManager->UseItemAtSlot(2, this);
+	}
+}
+void APlayerTank::Input_UseItem4()
+{
+	if (InventoryManager)
+	{
+		InventoryManager->UseItemAtSlot(3, this);
+	}
 }
 
 void APlayerTank::OnTurnStart()
