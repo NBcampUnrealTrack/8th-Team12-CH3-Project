@@ -82,6 +82,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	FRotator SavedTankRotation = FRotator::ZeroRotator;
 
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	class USoundBase* MoveSound;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class UAudioComponent* MoveAudioComp;
+
 	/// ----- 드론 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Drone")
 	TSubclassOf<class ADrone> DroneClass;
@@ -117,4 +122,5 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnTurnStart() override;
 	virtual void OnTurnEnd() override;
+	void Input_MoveEnd(const FInputActionValue& Value);
 };

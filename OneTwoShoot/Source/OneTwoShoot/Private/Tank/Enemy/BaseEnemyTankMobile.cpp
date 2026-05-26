@@ -67,7 +67,6 @@ void ABaseEnemyTankMobile::MoveOnVoxelGrid()
         UE_LOG(LogTemp, Error, TEXT("[%s] 경로가 0개입니다. 주행 불가능 상태이므로 안전하게 다음 행동력 판단으로 패스."), *GetName());
         bIsMoving = false;
 
-        // 멈춰 서서 턴이 영원히 굳지 않도록, 한 틱 뒤에 중앙 판단 뇌를 다시 깨워 행동력을 소모하거나 턴을 넘깁니다.
         GetWorldTimerManager().SetTimerForNextTick(this, &ABaseEnemyTankMobile::DecideAction);
         return;
     }
@@ -126,11 +125,20 @@ void ABaseEnemyTankMobile::ExecuteVoxelMovement(TArray<FIntVector> Path)
 
         FAIMoveRequest MoveRequest;
         MoveRequest.SetGoalLocation(TargetWorldPos);
-        MoveRequest.SetAcceptanceRadius(35.0f); // 팅김 방지를 위해 수치 여유 확보
+        MoveRequest.SetAcceptanceRadius(35.0f);
         MoveRequest.SetUsePathfinding(false);
         MoveRequest.SetReachTestIncludesAgentRadius(false);
 
         FPathFollowingRequestResult RequestResult = AIC->MoveTo(MoveRequest);
+
+        if (MoveSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(
+                this,
+                MoveSound,
+                GetActorLocation()
+            );
+        }
 
         if (RequestResult.Code == EPathFollowingRequestResult::Failed ||
             RequestResult.Code == EPathFollowingRequestResult::AlreadyAtGoal)

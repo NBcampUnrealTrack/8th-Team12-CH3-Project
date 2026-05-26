@@ -11,6 +11,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
 
 APlayerTank::APlayerTank()
 {
@@ -41,11 +43,14 @@ APlayerTank::APlayerTank()
 
 		MoveComp->SetWalkableFloorAngle(70.0f);
 	}
-	
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCamera->bUsePawnControlRotation = false;
 	FirstPersonCamera->SetActive(false);
+
+	MoveAudioComp = CreateDefaultSubobject<UAudioComponent>(TEXT("MoveAudioComp"));
+	MoveAudioComp->SetupAttachment(GetCapsuleComponent());
+	MoveAudioComp->bAutoActivate = false;
 }
 
 void APlayerTank::BeginPlay()
@@ -60,6 +65,11 @@ void APlayerTank::BeginPlay()
 	if (GI)
 	{
 		InventoryManager = GI->InventoryManager;
+	}
+
+	if (MoveSound && MoveAudioComp)
+	{
+		MoveAudioComp->SetSound(MoveSound);
 	}
 }
 
@@ -83,6 +93,9 @@ void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		{
 			EnhancedInputComponent->BindAction(ConfirmPhaseAction, ETriggerEvent::Started, this, &APlayerTank::Input_ConfirmPhase);
 		}
+
+		EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &APlayerTank::Input_MoveEnd);
+		EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Canceled, this, &APlayerTank::Input_MoveEnd);
 	}
 }
 
@@ -126,6 +139,20 @@ void APlayerTank::Input_Move(const FInputActionValue& Value)
 		}
 		
 		AddMovementInput(GetActorForwardVector(), MoveValue * CalculateActiveSpeed());
+
+		if (MoveAudioComp && !MoveAudioComp->IsPlaying())
+		{
+			MoveAudioComp->Play();
+		}
+	}
+}
+
+void APlayerTank::Input_MoveEnd(const FInputActionValue& Value)
+{
+	if (MoveAudioComp && MoveAudioComp->IsPlaying())
+	{
+		MoveAudioComp->Stop();
+		MoveAudioComp->FadeOut(0.2f, 0.0f);
 	}
 }
 

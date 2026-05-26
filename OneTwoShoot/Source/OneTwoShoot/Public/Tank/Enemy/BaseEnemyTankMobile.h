@@ -26,6 +26,9 @@ protected:
 
     TArray<FIntVector> CurrentRemainingPath;
 
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    class USoundBase* MoveSound;
+
     virtual void MoveOnVoxelGrid() override;
     virtual void ExecuteVoxelMovement(TArray<FIntVector> Path);
 
