@@ -39,4 +39,10 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     USceneComponent* BarrelPivotComp;
+
+    UPROPERTY(EditAnywhere, Category = "VFX")
+    class UNiagaraSystem* MuzzleFlashEffect;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    class USoundBase* FireSound;
 };

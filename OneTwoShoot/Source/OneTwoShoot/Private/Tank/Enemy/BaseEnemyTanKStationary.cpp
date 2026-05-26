@@ -32,7 +32,7 @@ void ABaseEnemyTanKStationary::Landed(const FHitResult& Hit)
 
     if (GetCharacterMovement())
     {
-        GetCharacterMovement()->DisableMovement();
+        GetCharacterMovement()->MaxWalkSpeed = 0.f;
         UE_LOG(LogTemp, Warning, TEXT("[%s] 바닥에 착지하여 고정 포탑 모드로 전환되었습니다."), *GetName());
     }
 }

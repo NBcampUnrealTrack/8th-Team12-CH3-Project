@@ -2,6 +2,7 @@
 #include "../Public/Tank/BaseProjectile.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "NiagaraFunctionLibrary.h"
 
 AEnemyTankMobileBossA::AEnemyTankMobileBossA()
 {
@@ -127,6 +128,33 @@ void AEnemyTankMobileBossA::FireProjectile(FRotator SpawnRotation)
         SpawnRotation,
         SpawnParams
     );
+
+    if (FirePivotComp)
+    {
+        FVector SpawnLocation = FirePivotComp->GetComponentLocation();
+        FRotator SpawnRotation = FirePivotComp->GetComponentRotation();
+
+        if (MuzzleFlashEffect)
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                MuzzleFlashEffect,
+                SpawnLocation,
+                SpawnRotation
+            );
+        }
+
+        if (FireSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(
+                this,
+                FireSound,
+                SpawnLocation
+            );
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 발사 이펙트 및 사운드 출력 완료!"), *GetName());
+    }
 
     if (Projectile)
     {

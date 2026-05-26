@@ -3,10 +3,11 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 ABaseProjectile::ABaseProjectile()
 {
- 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = true;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	CollisionComponent->SetSphereRadius(15.0f);
@@ -14,16 +15,16 @@ ABaseProjectile::ABaseProjectile()
 	CollisionComponent->BodyInstance.bUseCCD = true;
 	CollisionComponent->OnComponentHit.AddDynamic(this, &ABaseProjectile::OnHit);
 	RootComponent = CollisionComponent;
-	
+
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
 	ProjectileMesh->SetupAttachment(RootComponent);
-	
+
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->UpdatedComponent = CollisionComponent;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->ProjectileGravityScale = 1.0f;
 	ProjectileMovement->bSweepCollision = true;
-	
+
 	ConstantWindAcceleration = FVector::ZeroVector;
 
 	UE_LOG(LogTemp, Warning, TEXT("포탄 생성 완료!"));
@@ -74,21 +75,21 @@ void ABaseProjectile::FireInDirection(const FVector& ShootDirection, float Shoot
 	{
 		ProjectileMovement->StopMovementImmediately();
 		ProjectileMovement->Velocity = FVector::ZeroVector;
-        
+
 		FVector NormalizedDir = ShootDirection.GetSafeNormal();
-        
+
 		if (GetRootComponent())
 		{
 			GetRootComponent()->SetWorldRotation(NormalizedDir.Rotation());
 		}
 
-		ProjectileMovement->bInitialVelocityInLocalSpace = false; 
+		ProjectileMovement->bInitialVelocityInLocalSpace = false;
 		ProjectileMovement->bRotationFollowsVelocity = true;
 
 		ProjectileMovement->InitialSpeed = ShootPower;
 		ProjectileMovement->MaxSpeed = ShootPower + 1000.f;
 		ProjectileMovement->Velocity = NormalizedDir * ShootPower;
-        
+
 		ProjectileMovement->UpdateComponentVelocity();
 
 		ConstantWindAcceleration = StageWindForce;
@@ -116,30 +117,51 @@ void ABaseProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
 	IgnoreActors.Add(this);
 
 	float FinalRadius = BaseExplosionRadius + (ProjectileDamage * RadiusPerDamage);
-	
-		UGameplayStatics::ApplyRadialDamageWithFalloff(
-			this, 
-			ProjectileDamage, 
-			10.0f,
+
+	UGameplayStatics::ApplyRadialDamageWithFalloff(
+		this,
+		ProjectileDamage,
+		10.0f,
+		Hit.ImpactPoint,
+		FinalRadius,
+		FinalRadius,
+		1.0f,
+		nullptr,
+		IgnoreActors,
+		this,
+		GetInstigatorController(),
+		ECC_MAX
+	);
+
+	if (OnExplosionHit.IsBound())
+	{
+		OnExplosionHit.Broadcast(
 			Hit.ImpactPoint,
-			FinalRadius,
-			FinalRadius,
-			1.0f, 
-			nullptr,
-			IgnoreActors,
+			FinalRadius
+		);
+	}
+
+	FVector SpawnLocation = GetActorLocation();
+
+	if (HitEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			HitEffect,
+			SpawnLocation
+		);
+	}
+
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
 			this,
-			GetInstigatorController(),
-			ECC_MAX
-			);
-		
-		if (OnExplosionHit.IsBound())
-		{
-			OnExplosionHit.Broadcast(
-				Hit.ImpactPoint,
-				FinalRadius
-			);
-		}
-	
-	
+			HitSound,
+			SpawnLocation
+		);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[%s] 포탄 이펙트 및 사운드 출력 완료!"), *GetName());
+
 	Destroy();
 }

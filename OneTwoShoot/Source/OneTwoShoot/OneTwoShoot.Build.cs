@@ -19,7 +19,8 @@ public class OneTwoShoot : ModuleRules
 			"AIModule",
 			"UMG",
             "Slate",
-            "SlateCore"
+            "SlateCore",
+            "Niagara"
         }
 	);
 

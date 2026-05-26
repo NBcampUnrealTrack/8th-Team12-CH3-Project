@@ -14,6 +14,12 @@ class ONETWOSHOOT_API AEnemyTankMobileA : public ABaseEnemyTankMobile
 public:
     AEnemyTankMobileA();
 
+    UPROPERTY(EditAnywhere, Category = "VFX")
+    class UNiagaraSystem* MuzzleFlashEffect;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    class USoundBase* FireSound;
+
 protected:
     virtual void BeginPlay() override;
 
