@@ -23,4 +23,11 @@ protected:
 
     UPROPERTY(EditAnywhere, Category = "Combat")
     float ExplosionRadius;
+
+    UPROPERTY(EditAnywhere, Category = "VFX")
+    class UNiagaraSystem* DestructEffect;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    class USoundBase* DestructSound;
+
 };

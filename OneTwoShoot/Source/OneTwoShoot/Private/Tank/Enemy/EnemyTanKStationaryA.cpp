@@ -1,6 +1,7 @@
 ﻿#include "Tank/Enemy/EnemyTanKStationaryA.h"
 #include "Tank/BaseProjectile.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 AEnemyTanKStationaryA::AEnemyTanKStationaryA()
 {
@@ -104,27 +105,58 @@ void AEnemyTanKStationaryA::Aim()
 
 void AEnemyTanKStationaryA::Fire()
 {
-    if (!ProjectileClass || !FirePivotComp) return;
+    if (!ProjectileClass) return;
+    if (!FirePivotComp) return;
+
+    FVector SpawnLocation = FirePivotComp->GetComponentLocation();
+    FRotator SpawnRotation = FRotator(CurrentAimAngle, GetActorRotation().Yaw, 0.f);
 
     FActorSpawnParameters SpawnParams;
     SpawnParams.Owner = this;
     SpawnParams.Instigator = GetInstigator();
 
-    FRotator SpawnRotation = GetActorRotation();
-    SpawnRotation.Pitch = CurrentAimAngle;
+    UE_LOG(LogTemp, Warning, TEXT("발사!"));
 
     ABaseProjectile* Projectile = GetWorld()->SpawnActor<ABaseProjectile>(
         ProjectileClass,
-        FirePivotComp->GetComponentLocation(),
+        SpawnLocation,
         SpawnRotation,
         SpawnParams
     );
 
+    if (FirePivotComp)
+    {
+        if (MuzzleFlashEffect)
+        {
+            UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+                GetWorld(),
+                MuzzleFlashEffect,
+                SpawnLocation,
+                SpawnRotation
+            );
+        }
+
+        if (FireSound)
+        {
+            UGameplayStatics::PlaySoundAtLocation(
+                this,
+                FireSound,
+                SpawnLocation
+            );
+        }
+
+        UE_LOG(LogTemp, Warning, TEXT("[%s] 발사 이펙트 및 사운드 출력 완료!"), *GetName());
+    }
+
     if (Projectile)
     {
         FVector LaunchDirection = SpawnRotation.Vector();
-        Projectile->FireInDirection(LaunchDirection, LaunchPower, FVector::ZeroVector);
-        UE_LOG(LogTemp, Warning, TEXT("[%s] 포탄 발사 성공!"), *GetName());
+
+        FVector WindForce = FVector::ZeroVector;
+
+        Projectile->FireInDirection(LaunchDirection, LaunchPower, WindForce);
+
+        UE_LOG(LogTemp, Warning, TEXT("투사체 발사 성공!"));
     }
 }
 

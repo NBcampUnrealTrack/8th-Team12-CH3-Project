@@ -1,42 +1,67 @@
 ﻿#include "Tank/Enemy/EnemyTankSelfDestruct.h"
 #include "World/VoxelWorld.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
 
 AEnemyTankSelfDestruct::AEnemyTankSelfDestruct()
 {
-    AttackRange = 200.f;
-    ExplosionDamage = 150.f;
-    ExplosionRadius = 400.f;
-    MaxHealth = 100.f;
-    CurrentHealth = MaxHealth;
+	AttackRange = 200.f;
+	ExplosionDamage = 150.f;
+	ExplosionRadius = 400.f;
+	MaxHealth = 100.f;
+	CurrentHealth = MaxHealth;
 
-    UE_LOG(LogTemp, Warning, TEXT("[%s] 자폭 탱크 생성 완료"), *GetName());
+	UE_LOG(LogTemp, Warning, TEXT("[%s] 자폭 탱크 생성 완료"), *GetName());
 }
 
 void AEnemyTankSelfDestruct::Fire()
 {
-    Explode();
+	Explode();
 }
 
 void AEnemyTankSelfDestruct::Explode()
 {
-    FVector ExplodeLocation = GetActorLocation();
+	FVector ExplodeLocation = GetActorLocation();
 
-    UGameplayStatics::ApplyRadialDamage(
-        this,
-        ExplosionDamage,
-        ExplodeLocation,
-        ExplosionRadius,
-        UDamageType::StaticClass(),
-        TArray<AActor*>(),
-        this,
-        GetInstigatorController(),
-        true
-    );
+	FRotator SpawnRotation = GetActorRotation();
 
-    OnDamaged(MaxHealth);
-    UE_LOG(LogTemp, Error, TEXT("[%s] 자폭 완료!"), *GetName());
+	if (DestructEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			DestructEffect,
+			ExplodeLocation,
+			SpawnRotation
+		);
+	}
 
-    OnTurnEnd();
-    SetLifeSpan(0.1f);
+	if (DestructSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			DestructSound,
+			ExplodeLocation
+		);
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[%s] 자폭 이펙트 및 사운드 출력 완료!"), *GetName());
+
+
+	UGameplayStatics::ApplyRadialDamage(
+		this,
+		ExplosionDamage,
+		ExplodeLocation,
+		ExplosionRadius,
+		UDamageType::StaticClass(),
+		TArray<AActor*>(),
+		this,
+		GetInstigatorController(),
+		true
+	);
+
+	OnDamaged(MaxHealth);
+	UE_LOG(LogTemp, Error, TEXT("[%s] 자폭 완료!"), *GetName());
+
+	OnTurnEnd();
+	SetLifeSpan(0.1f);
 }

@@ -7,6 +7,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurnChangedSignature, ETurnState, NewTurnState);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWaveChangedSignature, int32, NewWaveCount);
+
 UCLASS()
 class ONETWOSHOOT_API ATurnGameMode : public AGameMode
 {
@@ -30,8 +32,17 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnTurnChangedSignature OnTurnChanged;
 	
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnWaveChangedSignature OnWaveChanged;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Wave")
+	int32 CurrentWaveCount;
+	
 	UFUNCTION(BlueprintPure, Category = "Turn")
 	ETurnState GetCurrentTurnState() const { return CurrentTurnState; }
+	
+	UFUNCTION(BlueprintPure, Category = "Wave")
+	int32 GetCurrentWaveCount() const { return CurrentWaveCount; }
 
 protected:
 	virtual void BeginPlay() override;

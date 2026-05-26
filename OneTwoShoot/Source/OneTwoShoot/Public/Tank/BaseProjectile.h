@@ -52,6 +52,12 @@ protected:
 	UFUNCTION()
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	class UNiagaraSystem* HitEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	class USoundBase* HitSound;
+
 private:
 	FVector ConstantWindAcceleration;
 };

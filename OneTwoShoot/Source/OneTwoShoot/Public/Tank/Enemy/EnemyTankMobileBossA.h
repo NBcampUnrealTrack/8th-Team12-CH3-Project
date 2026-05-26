@@ -25,6 +25,12 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Components")
     USceneComponent* FirePivotComp;
 
+    UPROPERTY(EditAnywhere, Category = "VFX")
+    class UNiagaraSystem* MuzzleFlashEffect;
+
+    UPROPERTY(EditAnywhere, Category = "Sound")
+    class USoundBase* FireSound;
+
 private:
 
     void FireProjectile(FRotator SpawnRotation);

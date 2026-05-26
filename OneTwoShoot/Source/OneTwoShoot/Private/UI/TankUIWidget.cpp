@@ -22,8 +22,10 @@ void UTankUIWidget::NativeConstruct()
 	if (GameMode)
 	{
 		GameMode->OnTurnChanged.AddDynamic(this, &UTankUIWidget::OnGameTurnChanged);
-		
 		UpdateTurnDisplay(GameMode->GetCurrentTurnState());
+		
+		GameMode->OnWaveChanged.AddDynamic(this, &UTankUIWidget::OnGameWaveChanged);
+		UpdateWaveDisplay(GameMode->GetCurrentWaveCount());
 	}
 }
 
@@ -35,4 +37,9 @@ void UTankUIWidget::OnTankHealthChanged(float CurrentHealth, float MaxHealth)
 void UTankUIWidget::OnGameTurnChanged(ETurnState NewTurnState)
 {
 	UpdateTurnDisplay(NewTurnState);
+}
+
+void UTankUIWidget::OnGameWaveChanged(int32 NewWaveCount)
+{
+	UpdateWaveDisplay(NewWaveCount);
 }
