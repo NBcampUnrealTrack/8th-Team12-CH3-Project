@@ -1,4 +1,10 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿#include "Game/MenuGameMode.h"
 
+#include "Game/MainMenuController.h"
 
-#include "Game/MenuGameMode.h"
+AMenuGameMode::AMenuGameMode()
+{
+	DefaultPawnClass = nullptr;
+	
+	PlayerControllerClass = AMainMenuController::StaticClass();
+}
