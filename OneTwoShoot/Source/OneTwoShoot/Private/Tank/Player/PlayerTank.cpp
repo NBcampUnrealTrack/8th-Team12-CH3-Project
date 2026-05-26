@@ -34,12 +34,18 @@ APlayerTank::APlayerTank()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	Camera->bUsePawnControlRotation = false;
+	
 	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
 	{
 		MoveComp->MaxStepHeight = 85.0f; 
 
 		MoveComp->SetWalkableFloorAngle(70.0f);
 	}
+	
+	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
+	FirstPersonCamera->bUsePawnControlRotation = false;
+	FirstPersonCamera->SetActive(false);
 }
 
 void APlayerTank::BeginPlay()
@@ -70,6 +76,10 @@ void APlayerTank::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(UseItem2Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem2);
 		EnhancedInputComponent->BindAction(UseItem3Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem3);
 		EnhancedInputComponent->BindAction(UseItem4Action, ETriggerEvent::Started, this, &APlayerTank::Input_UseItem4);
+		if (ConfirmPhaseAction)
+		{
+			EnhancedInputComponent->BindAction(ConfirmPhaseAction, ETriggerEvent::Started, this, &APlayerTank::Input_ConfirmPhase);
+		}
 	}
 }
 
@@ -92,17 +102,52 @@ float APlayerTank::CalculateActiveRotationSpeed() const
 /// ----- 탱크를 움직이는 로직
 void APlayerTank::Input_Move(const FInputActionValue& Value)
 {
+	if (CurrentPhase != ETankPhase::Move) return;
+	
 	float MoveValue = Value.Get<float>();
 	
-	if (CanMove() && (MoveValue != 0.0f))
+	if (MoveValue != 0.0f)
 	{
+		float CurrentDistance = FVector::DistXY(TurnStartLocation, GetActorLocation());
+		
+		if (CurrentDistance >= MaxMoveDistance)
+		{
+			FVector ToCenter = (TurnStartLocation - GetActorLocation()).GetSafeNormal();
+			
+			FVector MoveDirection = GetActorForwardVector() * MoveValue;
+			
+			if (FVector::DotProduct(ToCenter, MoveDirection) < 0.0f)
+			{
+				return;
+			}
+		}
+		
 		AddMovementInput(GetActorForwardVector(), MoveValue * CalculateActiveSpeed());
+	}
+}
+
+void APlayerTank::Input_ConfirmPhase()
+{
+	if (CurrentPhase == ETankPhase::Move)
+	{
+		SetTankPhase(ETankPhase::Aim);
+		
+		Camera->SetActive(false);
+		
+		if (FirstPersonCamera)
+		{
+			FirstPersonCamera->SetActive(true);
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("조준 단계 진입"));
 	}
 }
 
 /// ----- 탱크를 회전하는 로직
 void APlayerTank::Input_Horizontal(const FInputActionValue& Value)
 {
+	if (CurrentPhase != ETankPhase::Move) return;
+	
 	float AxisValue = Value.Get<float>();
 	
 	if (CanMove() && AxisValue != 0.0f)
@@ -188,9 +233,18 @@ void APlayerTank::Input_ToggleCamera()
 
 void APlayerTank::Input_Fire()
 {
-	if (CurrentPhase == ETankPhase::Aim || CurrentPhase == ETankPhase::Action)
+	if (CurrentPhase == ETankPhase::Aim)
 	{
+		SetTankPhase(ETankPhase::Action);
+		
 		FireCannon();
+		
+		if (FirstPersonCamera)
+		{
+			FirstPersonCamera->SetActive(false);
+		}
+		
+		Camera->SetActive(true);
 	}
 }
 
@@ -242,6 +296,19 @@ void APlayerTank::Input_UseItem4()
 void APlayerTank::OnTurnStart()
 {
 	Super::OnTurnStart();
+	
+	TurnStartLocation = GetActorLocation();
+	
+	DrawDebugCylinder(GetWorld(), TurnStartLocation, TurnStartLocation + FVector(0, 0, 10), MaxMoveDistance, 32, FColor::Green, false, 10.0f);
+	
+	SetTankPhase(ETankPhase::Move);
+	Camera->SetActive(true);
+	
+	if (FirstPersonCamera)
+	{
+		FirstPersonCamera->SetActive(false);
+	}
+	
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
