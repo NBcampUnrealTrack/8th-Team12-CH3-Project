@@ -85,24 +85,53 @@ void FVoxelMarchingMesher::MarchCube(const FVoxelMarchingMesherSettings& Setting
 		const int32 EdgeB = VoxelMarchingCubes::TriangleConnectionTable[VertexMask][TriangleIndex * 3 + 1];
 		const int32 EdgeC = VoxelMarchingCubes::TriangleConnectionTable[VertexMask][TriangleIndex * 3 + 2];
 
-		AddTriangle(MeshSections, EdgeVertex[EdgeA], EdgeVertex[EdgeB], EdgeVertex[EdgeC], BlockType, TriangleOrder);
+		AddTriangle(MeshSections, EdgeVertex[EdgeA], EdgeVertex[EdgeB], EdgeVertex[EdgeC], BlockType, Cube, TriangleOrder);
 	}
 }
 
 EVoxelBlockType FVoxelMarchingMesher::GetDominantBlockType(const FVoxelData Cube[8])
 {
+	EVoxelBlockType FirstSolidBlockType = EVoxelBlockType::Air;
+
 	for (int32 CornerIndex = 0; CornerIndex < 8; CornerIndex++)
 	{
-		if (Cube[CornerIndex].BlockType != EVoxelBlockType::Air)
+		const EVoxelBlockType CornerBlockType = Cube[CornerIndex].BlockType;
+		if (CornerBlockType == EVoxelBlockType::Air)
 		{
-			return Cube[CornerIndex].BlockType;
+			continue;
+		}
+
+		if (FirstSolidBlockType == EVoxelBlockType::Air)
+		{
+			FirstSolidBlockType = CornerBlockType;
+			continue;
+		}
+
+		if (FirstSolidBlockType != CornerBlockType)
+		{
+			return EVoxelBlockType::Dirt;
 		}
 	}
 
-	return EVoxelBlockType::Dirt;
+	return FirstSolidBlockType == EVoxelBlockType::Air
+		? EVoxelBlockType::Dirt
+		: FirstSolidBlockType;
 }
 
-void FVoxelMarchingMesher::AddTriangle(TArray<FChunkMeshData>& MeshSections, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const int32 TriangleOrder[3])
+bool FVoxelMarchingMesher::ContainsBlockType(const FVoxelData Cube[8], EVoxelBlockType BlockType)
+{
+	for (int32 CornerIndex = 0; CornerIndex < 8; CornerIndex++)
+	{
+		if (Cube[CornerIndex].BlockType == BlockType)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void FVoxelMarchingMesher::AddTriangle(TArray<FChunkMeshData>& MeshSections, const FVector& V1, const FVector& V2, const FVector& V3, EVoxelBlockType BlockType, const FVoxelData Cube[8], const int32 TriangleOrder[3])
 {
 	const FVector TriangleVertices[3] = { V1, V2, V3 };
 	FVector Normal = -FVector::CrossProduct(
@@ -114,7 +143,11 @@ void FVoxelMarchingMesher::AddTriangle(TArray<FChunkMeshData>& MeshSections, con
 		Normal = FVector::UpVector;
 	}
 
-	const int32 SectionIndex = GetVoxelTerrainMaterialSectionIndex(BlockType, Normal);
+	const EVoxelBlockType MaterialBlockType =
+		Normal.Z >= 0.85f && ContainsBlockType(Cube, EVoxelBlockType::Grass)
+			? EVoxelBlockType::Grass
+			: BlockType;
+	const int32 SectionIndex = GetVoxelTerrainMaterialSectionIndex(MaterialBlockType, Normal);
 	if (!MeshSections.IsValidIndex(SectionIndex))
 	{
 		return;
