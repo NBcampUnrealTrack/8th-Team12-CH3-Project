@@ -6,12 +6,15 @@
 #include "Game/GameSave.h"
 #include "Item/InventoryManager.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/PackageName.h"
+
 
 UOneTwoShootGameInstance::UOneTwoShootGameInstance()
 {
 	CurrentSave = nullptr;
 	SaveSlotName = TEXT("OneTwoShoot_Save");
 	SaveUserIndex = 0;
+
 }
 
 void UOneTwoShootGameInstance::Init()
@@ -19,14 +22,14 @@ void UOneTwoShootGameInstance::Init()
 	Super::Init();
 
 	LoadProgress();
-	
+
 	if (!InventoryManager)
 	{
 		InventoryManager = NewObject<UInventoryManager>(this);
-        
-		TArray<FInventoryItemSaveData> EmptyData; 
+
+		TArray<FInventoryItemSaveData> EmptyData;
 		InventoryManager->Initialize(EmptyData);
-        
+
 		InventoryManager->AddItem(TEXT("HealItem"), 1);
 		InventoryManager->AssignToQuickSlot(0, TEXT("HealItem"));
 	}
@@ -39,6 +42,92 @@ void UOneTwoShootGameInstance::StartNewRun()
 	RunData.CurrentStageIndex = 0;
 
 	SaveProgress();
+	OpenCurrentStageLevel();
+}
+
+void UOneTwoShootGameInstance::OpenCurrentStageLevel()
+{
+	if (!StageLevels.IsValidIndex(RunData.CurrentStageIndex))
+	{
+		EndRun(true);
+		return;
+	}
+
+	const TSoftObjectPtr<UWorld>& StageLevel = StageLevels[RunData.CurrentStageIndex];
+
+	if (StageLevel.IsNull())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OpenCurrentStageLevel failed: StageLevel is null."));
+		return;
+	}
+
+	const FString StagePackageName = FPackageName::ObjectPathToPackageName(StageLevel.ToString());
+	const FName StageLevelName(*StagePackageName);
+
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("Opening stage %d: %s"),
+		RunData.CurrentStageIndex + 1,
+		*StageLevelName.ToString()
+	);
+
+	UGameplayStatics::OpenLevel(this, StageLevelName);
+}
+
+void UOneTwoShootGameInstance::AdvanceToNextStage()
+{
+	if (!RunData.bHasActiveRun)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AdvanceToNextStage ignored: no active run."));
+		return;
+	}
+
+	RunData.CurrentStageIndex++;
+
+	if (!StageLevels.IsValidIndex(RunData.CurrentStageIndex))
+	{
+		EndRun(true);
+		return;
+	}
+
+	SaveProgress();
+	OpenCurrentStageLevel();
+}
+
+void UOneTwoShootGameInstance::RestartCurrentStage()
+{
+	if (!RunData.bHasActiveRun)
+	{
+		StartNewRun();
+		return;
+	}
+
+	OpenCurrentStageLevel();
+}
+
+void UOneTwoShootGameInstance::EndRun(bool bCleared)
+{
+	RunData.bHasActiveRun = false;
+
+	UE_LOG(
+		LogTemp,
+		Warning,
+		TEXT("Run ended. Cleared=%s"),
+		bCleared ? TEXT("true") : TEXT("false")
+	);
+
+	SaveProgress();
+
+	if (MainMenu.IsNull())
+	{
+		return;
+	}
+
+	const FString MainMenuPackageName = FPackageName::ObjectPathToPackageName(MainMenu.ToString());
+	const FName MainMenuLevelName(*MainMenuPackageName);
+
+	UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 }
 
 bool UOneTwoShootGameInstance::LoadProgress()

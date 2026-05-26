@@ -20,8 +20,29 @@ public:
 
 	virtual void Init() override;
 
-	UFUNCTION(BlueprintCallable, Category = "Save")
+	UFUNCTION(BlueprintCallable, Category = "Run")
 	void StartNewRun();
+
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	int32 GetCurrentStageIndex() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	void OpenCurrentStageLevel();
+
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	void AdvanceToNextStage();
+
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	void RestartCurrentStage();
+
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	void EndRun(bool bCleared);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Run")
+	TArray<TSoftObjectPtr<UWorld>> StageLevels;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Run")
+	TSoftObjectPtr<UWorld> MainMenu;
 
 	UFUNCTION(BlueprintCallable, Category = "Save")
 	bool LoadProgress();
@@ -33,21 +54,18 @@ public:
 	bool HasActiveRun() const;
 
 	UFUNCTION(BlueprintCallable, Category = "Save")
-	int32 GetCurrentStageIndex() const;
-
-	UFUNCTION(BlueprintCallable, Category = "Save")
 	void SetCurrentStageIndex(int32 NewStageIndex);
 
-	UPROPERTY(BlueprintReadOnly, Category = "Save|Profile")
+	UPROPERTY(BlueprintReadOnly, Category = "Save")
 	FPlayerProfileData ProfileData;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Save|Run")
+	UPROPERTY(BlueprintReadOnly, Category = "Save")
 	FRunData RunData;
-	
-	UPROPERTY()
+
+	UPROPERTY() // 더미
 	class UInventoryManager* InventoryManager;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Item System")
+
+	UPROPERTY(EditDefaultsOnly, Category = "Item System") //더미
 	TMap<FName, TSubclassOf<UBaseItem>> ItemDatabase;
 
 private:
