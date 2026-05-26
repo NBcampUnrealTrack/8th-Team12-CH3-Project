@@ -1,7 +1,8 @@
-#include "../Public/UI/MainMenuUIWidget.h"
+﻿#include "../Public/UI/MainMenuUIWidget.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Game/OneTwoShootGameInstance.h"
 
 void UMainMenuUIWidget::NativeConstruct()
 {
@@ -20,7 +21,12 @@ void UMainMenuUIWidget::NativeConstruct()
 
 void UMainMenuUIWidget::OnStartClicked()
 {
-	UGameplayStatics::OpenLevel(GetWorld(), FName("Level1"));
+	//UGameplayStatics::OpenLevel(GetWorld(), FName("Level1"));
+
+	if (UOneTwoShootGameInstance* GI = Cast<UOneTwoShootGameInstance>(GetGameInstance()))
+	{
+		GI->StartNewRun();
+	}
 }
 
 void UMainMenuUIWidget::OnQuitClicked()
