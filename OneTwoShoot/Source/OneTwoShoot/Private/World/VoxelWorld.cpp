@@ -339,6 +339,10 @@ void AVoxelWorld::Generate2DWorld()
 					continue;
 				}
 
+				#if WITH_EDITOR
+				Chunk->SetFolderPath(TEXT("Terrain"));
+				#endif
+
 				Chunk->SetVoxelSize(VoxelSize);
 				Chunk->SetChunkDimensions(
 					SafeChunkSize.X,
