@@ -52,6 +52,9 @@ void APlayerTank::BeginPlay()
 {
 	Super::BeginPlay();
 	SetTankPhase(ETankPhase::Wait);
+	
+	OnPlayerPhaseChanged.Broadcast(ETankPhase::Wait);
+	
 	bIsDroneView = false;
 	UOneTwoShootGameInstance* GI = Cast<UOneTwoShootGameInstance>(GetGameInstance());
 	if (GI)
@@ -131,6 +134,8 @@ void APlayerTank::Input_ConfirmPhase()
 	if (CurrentPhase == ETankPhase::Move)
 	{
 		SetTankPhase(ETankPhase::Aim);
+		
+		OnPlayerPhaseChanged.Broadcast(ETankPhase::Aim);
 		
 		Camera->SetActive(false);
 		
@@ -237,6 +242,8 @@ void APlayerTank::Input_Fire()
 	{
 		SetTankPhase(ETankPhase::Action);
 		
+		OnPlayerPhaseChanged.Broadcast(ETankPhase::Action);
+		
 		FireCannon();
 		
 		if (FirstPersonCamera)
@@ -299,10 +306,13 @@ void APlayerTank::OnTurnStart()
 	
 	TurnStartLocation = GetActorLocation();
 	
-	DrawDebugCylinder(GetWorld(), TurnStartLocation, TurnStartLocation + FVector(0, 0, 10), MaxMoveDistance, 32, FColor::Green, false, 10.0f);
+	// 디버그용 이동 거리 시각화
+	// DrawDebugCylinder(GetWorld(), TurnStartLocation, TurnStartLocation + FVector(0, 0, 10), MaxMoveDistance, 32, FColor::Green, false, 10.0f);
 	
 	SetTankPhase(ETankPhase::Move);
 	Camera->SetActive(true);
+	
+	OnPlayerPhaseChanged.Broadcast(ETankPhase::Move);
 	
 	if (FirstPersonCamera)
 	{

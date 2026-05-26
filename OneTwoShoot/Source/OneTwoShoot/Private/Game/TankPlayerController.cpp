@@ -13,6 +13,11 @@ void ATankPlayerController::BeginPlay()
 		if (UIWidgetInstance != nullptr)
 		{
 			UIWidgetInstance->AddToViewport();
+			
+			if (ABaseTank* ControlledTank = Cast<ABaseTank>(GetPawn()))
+			{
+				UIWidgetInstance->BindToTank(ControlledTank);
+			}
 		}
 	}
 }

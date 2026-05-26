@@ -4,6 +4,8 @@
 #include "../Public/Tank/BaseTank.h"
 #include "PlayerTank.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerPhaseChangedSignature, ETankPhase, NewPhase);
+
 class ABaseTank;
 
 UCLASS()
@@ -17,6 +19,12 @@ public:
 	void EnterDroneMode(class APlayerController* PC);
 	void ExitDroneMode(class APlayerController* PC);
 	
+	UFUNCTION(BlueprintPure, Category = "Tank|Phase")
+	ETankPhase GetCurrentPhase() const { return CurrentPhase; }
+	
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnPlayerPhaseChangedSignature OnPlayerPhaseChanged;
+
 protected:
 	/// ----- 입력 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -59,7 +67,7 @@ protected:
 	class UCameraComponent* Camera;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn|Movement")
-	float MaxMoveDistance = 500.0f;
+	float MaxMoveDistance = 1000.0f;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn|Movement")
 	FVector TurnStartLocation;

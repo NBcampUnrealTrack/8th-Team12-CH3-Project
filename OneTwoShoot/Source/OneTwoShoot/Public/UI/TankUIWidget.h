@@ -36,4 +36,10 @@ protected:
 	
 	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
 	void UpdateHealthBar(float CurrentHealth, float MaxHealth);
+	
+	UFUNCTION()
+	void OnTankPhaseChanged(ETankPhase NewPhase);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+	void UpdateControlGuideUI(ETankPhase NewPhase);
 };
