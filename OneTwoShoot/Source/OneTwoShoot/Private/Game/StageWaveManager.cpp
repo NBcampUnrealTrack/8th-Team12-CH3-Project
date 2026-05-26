@@ -28,11 +28,16 @@ void AStageWaveManager::BeginPlay()
 
 void AStageWaveManager::StartNextWave()
 {
+    if (bIsWaveStartPending || bIsWaveActive) return;
+
     if (CurrentWaveIndex >= ActiveStageWaves.Num())
     {
-        UE_LOG(LogTemp, Warning, TEXT("모든 웨이브 완료! 스테이지 클리어."));
+        UE_LOG(LogTemp, Warning, TEXT("모든 웨이브 완료!"));
         return;
     }
+
+    UE_LOG(LogTemp, Warning, TEXT("다음 웨이브"));
+    bIsWaveStartPending = true;
 
     FWaveData& Wave = ActiveStageWaves[CurrentWaveIndex];
     AVoxelWorld* VWorld = Cast<AVoxelWorld>(UGameplayStatics::GetActorOfClass(GetWorld(), AVoxelWorld::StaticClass()));
@@ -43,19 +48,18 @@ void AStageWaveManager::StartNextWave()
     {
         if (Info.EnemyClass && VWorld)
         {
-            // 1. 복쉘 좌표를 월드 좌표로 변환 (Z값은 높은 곳으로 설정)
+
             FIntVector VoxelCoords(Info.SpawnVoxelXY.X, Info.SpawnVoxelXY.Y, 0);
             FVector SpawnPos = VWorld->VoxelToWorldLocation(VoxelCoords);
             SpawnPos.Z = SpawnDropHeight;
 
-            // 2. 적 탱크 스폰
             GetWorld()->SpawnActor<ABaseEnemyTank>(Info.EnemyClass, SpawnPos, FRotator::ZeroRotator);
         }
     }
 
-    // 3. 적들이 착지할 시간을 준 뒤 턴 시스템 시작
-    FTimerHandle BattleStartTimer;
-    GetWorldTimerManager().SetTimer(BattleStartTimer, FTimerDelegate::CreateLambda([this]() {
+    GetWorldTimerManager().SetTimer(BattleStartTimerHandle, FTimerDelegate::CreateLambda([this]() {
+        bIsWaveStartPending = false;
+        bIsWaveActive = true;
         if (ATurnGameMode* GM = Cast<ATurnGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
         {
             GM->StartWave();
@@ -65,11 +69,14 @@ void AStageWaveManager::StartNextWave()
 
 void AStageWaveManager::OnEnemyDestroyed()
 {
+    if (!bIsWaveActive) return;
+
     CurrentWaveEnemyCount--;
 
     if (CurrentWaveEnemyCount <= 0)
     {
         UE_LOG(LogTemp, Warning, TEXT("웨이브 %d 섬멸 완료!"), CurrentWaveIndex + 1);
+        bIsWaveActive = false;
         CurrentWaveIndex++;
 
         if (ATurnGameMode* GM = Cast<ATurnGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
