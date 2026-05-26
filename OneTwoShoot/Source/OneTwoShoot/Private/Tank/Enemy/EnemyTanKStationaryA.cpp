@@ -4,19 +4,40 @@
 
 AEnemyTanKStationaryA::AEnemyTanKStationaryA()
 {
-    FirePoint = CreateDefaultSubobject<USceneComponent>(TEXT("FirePoint"));
-    FirePoint->SetupAttachment(RootComponent);
-
     AttackRange = 3000.f;
     MaxChargeTurns = 2; // 예: 2턴 주기 사격
     CurrentChargeTurns = 0;
+
+    LaunchPower = 6000.f;
+}
+
+void AEnemyTanKStationaryA::BeginPlay()
+{
+    Super::BeginPlay();
+
+    TArray<USceneComponent*> SceneComps;
+    GetComponents<USceneComponent>(SceneComps);
+
+    for (USceneComponent* CurrComp : SceneComps)
+    {
+        if (CurrComp)
+        {
+            if (CurrComp->GetName() == TEXT("BarrelPivot"))
+            {
+                BarrelPivotComp = CurrComp;
+            }
+            else if (CurrComp->GetName() == TEXT("FirePoint"))
+            {
+                FirePivotComp = CurrComp;
+            }
+        }
+    }
 }
 
 void AEnemyTanKStationaryA::OnTurnStart()
 {
     if (bIsDead) return;
 
-    // 로직을 DecideAction으로 일원화
     DecideAction();
 }
 
@@ -50,10 +71,40 @@ void AEnemyTanKStationaryA::DecideAction()
     }
 }
 
-// 사격 방식 구체화 (오버라이드)
+void AEnemyTanKStationaryA::Aim()
+{
+    Super::Aim();
+
+    if (BarrelPivotComp && FirePivotComp && TargetPlayer)
+    {
+        FVector TossVelocity;
+        bool bSuccess = UGameplayStatics::SuggestProjectileVelocity(
+            this,
+            TossVelocity,
+            FirePivotComp->GetComponentLocation(),
+            TargetPlayer->GetActorLocation(),
+            LaunchPower,
+            false, 0.f, 0.f,
+            ESuggestProjVelocityTraceOption::DoNotTrace
+        );
+
+        if (bSuccess)
+        {
+            FRotator PerfectAimRot = TossVelocity.Rotation();
+            FRotator BarrelRelRot = BarrelPivotComp->GetRelativeRotation();
+
+            float TargetPitch = PerfectAimRot.Pitch - GetActorRotation().Pitch;
+            TargetPitch = FMath::Clamp(TargetPitch, -35.0f, 50.0f);
+
+            BarrelRelRot.Pitch = TargetPitch;
+            BarrelPivotComp->SetRelativeRotation(BarrelRelRot);
+        }
+    }
+}
+
 void AEnemyTanKStationaryA::Fire()
 {
-    if (!ProjectileClass || !FirePoint) return;
+    if (!ProjectileClass || !FirePivotComp) return;
 
     FActorSpawnParameters SpawnParams;
     SpawnParams.Owner = this;
@@ -64,7 +115,7 @@ void AEnemyTanKStationaryA::Fire()
 
     ABaseProjectile* Projectile = GetWorld()->SpawnActor<ABaseProjectile>(
         ProjectileClass,
-        FirePoint->GetComponentLocation(),
+        FirePivotComp->GetComponentLocation(),
         SpawnRotation,
         SpawnParams
     );
@@ -72,7 +123,7 @@ void AEnemyTanKStationaryA::Fire()
     if (Projectile)
     {
         FVector LaunchDirection = SpawnRotation.Vector();
-        Projectile->FireInDirection(LaunchDirection, FirePower, FVector::ZeroVector);
+        Projectile->FireInDirection(LaunchDirection, LaunchPower, FVector::ZeroVector);
         UE_LOG(LogTemp, Warning, TEXT("[%s] 포탄 발사 성공!"), *GetName());
     }
 }

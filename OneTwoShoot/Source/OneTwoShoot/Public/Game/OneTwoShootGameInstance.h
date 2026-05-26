@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Item/BaseItem.h"
 #include "Engine/GameInstance.h"
 #include "Game/GameSaveTypes.h"
 #include "OneTwoShootGameInstance.generated.h"
@@ -42,6 +43,12 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Save|Run")
 	FRunData RunData;
+	
+	UPROPERTY()
+	class UInventoryManager* InventoryManager;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Item System")
+	TMap<FName, TSubclassOf<UBaseItem>> ItemDatabase;
 
 private:
 	UPROPERTY()

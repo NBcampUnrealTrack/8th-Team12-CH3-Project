@@ -49,7 +49,7 @@ protected:
 	EReloadSpeed CurrentPlayerReloadSpeed;
 	
 	UPROPERTY()
-	TArray<AActor*> AliveEnemies;
+	TArray<ABaseEnemyTank*> AliveEnemies;
 	
 	int32 CurrentEnemyIndex;
 	
