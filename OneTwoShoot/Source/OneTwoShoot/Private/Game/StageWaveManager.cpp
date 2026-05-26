@@ -3,6 +3,7 @@
 #include "World/VoxelWorld.h"
 #include "Tank/Enemy/BaseEnemyTank.h"
 #include "Kismet/GameplayStatics.h"
+#include "Game/OneTwoShootGameInstance.h"
 
 AStageWaveManager::AStageWaveManager()
 {
@@ -32,7 +33,12 @@ void AStageWaveManager::StartNextWave()
 
     if (CurrentWaveIndex >= ActiveStageWaves.Num())
     {
-        UE_LOG(LogTemp, Warning, TEXT("모든 웨이브 완료!"));
+        UE_LOG(LogTemp, Warning, TEXT("모든 웨이브 완료! 스테이지 클리어. 다음 레벨로 이동합니다."));
+
+        if (UOneTwoShootGameInstance* GI = Cast<UOneTwoShootGameInstance>(GetGameInstance()))
+        {
+            GI->AdvanceToNextStage();
+        }
         return;
     }
 
