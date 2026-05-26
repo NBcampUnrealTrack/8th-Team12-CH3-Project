@@ -6,6 +6,10 @@ void ATankPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	bShowMouseCursor = false;
+	FInputModeGameOnly InputModeData;
+	SetInputMode(InputModeData);
+	
 	if (UIWidgetClass != nullptr)
 	{
 		UIWidgetInstance = CreateWidget<UTankUIWidget>(this, UIWidgetClass);
