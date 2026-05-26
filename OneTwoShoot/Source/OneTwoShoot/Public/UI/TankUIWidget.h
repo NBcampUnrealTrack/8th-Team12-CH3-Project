@@ -26,6 +26,12 @@ protected:
 	void UpdateTurnDisplay(ETurnState NewTurnState);
 	
 	UFUNCTION()
+	void OnGameWaveChanged(int32 NewWaveCount);
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+	void UpdateWaveDisplay(int32 NewWaveCount);
+	
+	UFUNCTION()
 	void OnTankHealthChanged(float CurrentHealth, float MaxHealth);
 	
 	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
