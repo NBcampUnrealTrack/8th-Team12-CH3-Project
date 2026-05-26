@@ -59,8 +59,7 @@ protected:
 	// 드론으로 진입 하기 전의 탱크 시야를 저장하는 변수
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	FRotator SavedTankRotation = FRotator::ZeroRotator;
-	
-	
+
 	/// ----- 드론 매핑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Drone")
 	TSubclassOf<class ADrone> DroneClass;

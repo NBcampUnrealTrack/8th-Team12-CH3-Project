@@ -64,7 +64,6 @@ protected:
     virtual void MoveOnVoxelGrid();
     virtual void Fire();
 
-
 public:
 
     //체력 바 UI

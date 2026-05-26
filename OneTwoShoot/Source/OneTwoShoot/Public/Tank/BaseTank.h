@@ -47,6 +47,12 @@ public:
 	virtual void OnTurnEnd();
 
 protected:
+
+	UPROPERTY(EditAnywhere, Category = "VFX")
+	class UNiagaraSystem* MuzzleFlashEffect;
+	UPROPERTY(EditAnywhere, Category = "Sound")
+	class USoundBase* FireSound;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
 	ETankPhase CurrentPhase;
 	
@@ -76,6 +82,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class USceneComponent* CachedBarrelPivotComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	class USceneComponent* FirePivotComp;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	class UStaticMeshComponent* CachedBarrelMesh;

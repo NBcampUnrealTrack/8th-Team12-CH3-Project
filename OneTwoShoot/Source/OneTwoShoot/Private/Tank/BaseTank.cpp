@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "ModuleDescriptor.h"
+#include "NiagaraFunctionLibrary.h"
 
 ABaseTank::ABaseTank()
 {
@@ -44,10 +45,12 @@ void ABaseTank::BeginPlay()
 		if (CurrComp && CurrComp->GetName() == TEXT("BarrelPivot"))
 		{
 			CachedBarrelPivotComp = CurrComp;
-			break;
-			}
 		}
-
+		else if (CurrComp && CurrComp->GetName() == TEXT("FirePoint"))
+		{
+			FirePivotComp = CurrComp;
+		}
+	}
 	CurrentYaw = DefaultTurretRotation.Yaw;
 	CurrentPitch = -DefaultBarrelRotation.Pitch;
 }
@@ -89,6 +92,7 @@ void ABaseTank::UpdateAimAngle(float PitchDelta, float YawDelta)
 void ABaseTank::FireCannon()
 {
 	if (!ProjectileClass) return;
+	if (!FirePivotComp) return;
 
 	FVector SpawnLocation = FVector::ZeroVector;
 	FVector ShootDirection = FVector::ForwardVector;
@@ -104,6 +108,33 @@ void ABaseTank::FireCannon()
 	{
 		SpawnLocation = GetActorLocation() + (GetActorForwardVector() * 150.f) + FVector(0, 0, 100.f);
 		ShootDirection = GetActorForwardVector();
+	}
+
+	if (FirePivotComp)
+	{
+		if (MuzzleFlashEffect)
+		{
+			FVector EffectScale = FVector(5.f, 5.f, 5.f);
+
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				MuzzleFlashEffect,
+				SpawnLocation,
+				ShootDirection.Rotation(),
+				EffectScale
+			);
+		}
+
+		if (FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				this,
+				FireSound,
+				SpawnLocation
+			);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("[%s] 발사 이펙트 및 사운드 출력 완료!"), *GetName());
 	}
 
 	SpawnLocation += (ShootDirection * 10.f); 
