@@ -10,6 +10,7 @@ ATurnGameMode::ATurnGameMode()
 	LastActiveUnit = ETankUnitType::None;
 	PlayerTurnCount = 0;
 	CurrentPlayerReloadSpeed = EReloadSpeed::Normal;
+	CurrentWaveCount = 0;
 }
 
 void ATurnGameMode::BeginPlay()
@@ -21,6 +22,11 @@ void ATurnGameMode::StartWave()
 {
 	bIsWaveRunning = true;
 
+	CurrentWaveCount++;
+	OnWaveChanged.Broadcast(CurrentWaveCount);
+	
+	UE_LOG(LogTemp, Warning, TEXT("%d 웨이브 시작"), CurrentWaveCount);
+	
 	CurrentTurnState = ETurnState::Wait;
 	OnTurnChanged.Broadcast(CurrentTurnState);
 
