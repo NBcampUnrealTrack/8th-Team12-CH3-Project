@@ -5,7 +5,7 @@
 
 AEnemyTankSelfDestruct::AEnemyTankSelfDestruct()
 {
-	AttackRange = 200.f;
+	AttackRange = 300.f;
 	ExplosionDamage = 150.f;
 	ExplosionRadius = 400.f;
 	MaxHealth = 100.f;
